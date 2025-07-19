@@ -1,0 +1,21 @@
+convert 5;
+qubit q0, q1, q2;
+barrier q0, q1, q2;
+qop h q1;
+qop cx q1, q2;
+barrier q0, q1, q2;
+qop cx q0, q1;
+qop h q0;
+barrier q0, q1, q2;
+measure q0, q1 -> c0, c1;
+barrier q0, q1, q2;
+if (c1 == 1) {
+    qop x q2;
+}
+if (c0 == 1) {
+    qop z q2;
+}
+barrier q0, q1, q2;
+measure q2 -> c2;
+print q2;
+

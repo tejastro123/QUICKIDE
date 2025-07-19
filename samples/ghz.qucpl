@@ -1,0 +1,12 @@
+# GHZ CIRCUIT CODE
+
+qubit q0, q1, q2;
+qop h q0;
+qop cx q0, q1;
+qop cx q1, q2;
+measure q0, q1, q2 -> c0, c1, c2;
+if (c0 == 1) {
+    print c0;
+} else {
+    print c1;
+}

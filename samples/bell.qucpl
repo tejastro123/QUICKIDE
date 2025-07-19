@@ -1,0 +1,7 @@
+# BELL CIRCUIT CODE
+
+qubit q0, q1;
+qop h q0;
+qop cx q0, q1;
+measure q0, q1 -> c0, c1;
+print c0, c1;
