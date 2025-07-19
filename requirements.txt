@@ -1,0 +1,22 @@
+# Core GUI + Utilities
+tkhtmlview
+markdown
+
+# Quantum SDK
+qiskit
+qiskit-aer
+
+# Plotting & Visualization
+matplotlib
+
+# Syntax Highlighting (optional enhancements)
+pygments
+
+# Parsing
+lark
+
+# CLI/Debugging Helpers (optional)
+argparse
+
+# Only needed for building standalone GUI apps (e.g. via PyInstaller)
+pyinstaller
