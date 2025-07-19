@@ -28,15 +28,6 @@
 - 🧠 Built-in tutorial programs for Bell, GHZ, teleportation, etc.
 
 
-## 🖼️ Screenshots
-
-> _📌 Add screenshots to the `/docs/images/` folder and link them here_
-
-| Editor | Simulator | Visualization | Bloch Sphere |
-|--------|-----------|---------------|---------------|
-| ![](docs/images/editor.png) | ![](docs/images/simulation.png) | ![](docs/images/visualization.png) | ![](docs/images/bloch.png) |
-
-
 ## ⚙️ Tech Stack
 
 - **Language**: Python 3.10+
