@@ -1,5 +1,3 @@
-# BELL CIRCUIT CODE
-
 qubit q0, q1;
 qop h q0;
 qop cx q0, q1;

@@ -1,5 +1,3 @@
-# GHZ CIRCUIT CODE
-
 qubit q0, q1, q2;
 qop h q0;
 qop cx q0, q1;
