@@ -1,0 +1,28 @@
+.toolbar {
+  padding: 10px;
+  background-color: #3c3f41;
+  border-bottom: 1px solid #2b2b2b;
+}
+
+.toolbar button {
+  background-color: #4b6eaf;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  margin-right: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.toolbar button:hover {
+  background-color: #5a83c2;
+}
+
+.toolbar button.clear-btn {
+  background-color: #7a7a7a;
+}
+
+.toolbar button.clear-btn:hover {
+  background-color: #909090;
+}

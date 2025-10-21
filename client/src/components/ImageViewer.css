@@ -1,0 +1,33 @@
+
+.image-viewer {
+  position: relative; /* Needed to position the button */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fafafa;
+}
+
+.image-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.save-image-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.save-image-btn:hover {
+  opacity: 1;
+}
