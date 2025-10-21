@@ -10,12 +10,15 @@ const ProjectSchema = new mongoose.Schema({
     type: String,
     default: '// Your QuCPL code here',
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  // You would add a user reference here
-  // user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 
 module.exports = mongoose.model('Project', ProjectSchema);

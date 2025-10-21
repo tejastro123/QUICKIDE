@@ -5,6 +5,17 @@ const api = axios.create({
   baseURL: 'http://localhost:5000/api',
 });
 
+export const setAuthToken = (token) => {
+  if (token) {
+    // Apply token to every request
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    // Delete the auth header
+    delete api.defaults.headers.common['Authorization'];
+  }
+};
+
+
 // --- Compiler Functions ---
 
 export const parseCode = (code) => {

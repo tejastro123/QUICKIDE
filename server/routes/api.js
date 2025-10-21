@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 const Project = require('../models/Project');
+const auth = require('../middleware/auth');
 
 // The base URL for your Python compiler service
 const PYTHON_API_URL = 'http://localhost:5001';
@@ -11,11 +12,12 @@ const PYTHON_API_URL = 'http://localhost:5001';
  * Project Routes (for saving/loading code)
  * ========================================
  */
-router.post('/projects', async (req, res) => {
+router.post('/projects', auth, async (req, res) => {
   try {
     const project = new Project({
       name: req.body.name || 'Untitled Project',
       code: req.body.code,
+      user: req.user.id,
     });
     await project.save();
     res.status(201).json(project);
@@ -24,20 +26,23 @@ router.post('/projects', async (req, res) => {
   }
 });
 
-router.get('/projects', async (req, res) => {
+router.get('/projects', auth, async (req, res) => {
   try {
-    const projects = await Project.find().sort({ createdAt: -1 });
+    const projects = await Project.find({ user: req.user.id }).sort({ createdAt: -1 });
     res.json(projects);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/projects/:id', async (req, res) => {
+router.get('/projects/:id', auth, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
+    }
+    if (project.user.toString() !== req.user.id) {
+      return res.status(401).json({ error: 'Not authorized' });
     }
     res.json(project);
   } catch (err) {

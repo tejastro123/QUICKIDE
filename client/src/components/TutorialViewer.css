@@ -1,0 +1,74 @@
+.tutorial-viewer button {
+  background-color: #1c7c8c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tutorial-viewer button:hover {
+  background-color: #2399ad;
+}
+
+.markdown-content {
+  margin-top: 20px;
+  padding: 1px 25px; /* Add padding for content */
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #fdfdfd;
+  line-height: 1.6;
+  max-width: 100%;
+  overflow-x: auto; /* Handle wide content */
+}
+
+/* Basic styles for rendered markdown */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.markdown-content code {
+  background-color: #f0f0f0;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.markdown-content pre {
+  background-color: #2b2b2b; /* Match syntax highlighter theme */
+  padding: 15px;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #ddd;
+  padding-left: 15px;
+  color: #777;
+  margin-left: 0;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  width: auto;
+  margin-bottom: 15px;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+}
+
+.markdown-content th {
+  background-color: #f7f7f7;
+}
