@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '../services/api';
 
-// Pass setCode as a prop so this component can load code into the editor
 function ProjectList({ setCode, log }) {
   const [projects, setProjects] = useState([]);
 
@@ -14,7 +13,6 @@ function ProjectList({ setCode, log }) {
     }
   }, [log]);
 
-  // Fetch all projects when the component loads
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
@@ -23,25 +21,70 @@ function ProjectList({ setCode, log }) {
     try {
       const response = await api.getProject(id);
       const { code, name } = response.data;
-      setCode(code); // This is the key part!
+      setCode(code);
       log(`Loaded project: ${name}`, 'success');
     } catch (err) {
       log('Error loading project', 'error');
     }
   };
 
+  const handleRename = async (e, id, currentName) => {
+    e.stopPropagation();
+    const newName = prompt('Enter new project name:', currentName);
+    if (!newName || newName === currentName) return;
+
+    try {
+      await api.renameProject(id, newName);
+      log(`Project renamed to: ${newName}`, 'success');
+      fetchProjects();
+    } catch (err) {
+      log('Error renaming project', 'error');
+    }
+  };
+
+  const handleDelete = async (e, id, name) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+      await api.deleteProject(id);
+      log(`Project "${name}" deleted.`, 'success');
+      fetchProjects();
+    } catch (err) {
+      log('Error deleting project', 'error');
+    }
+  };
+
   return (
-    <div className="panel-content scrollable">
-      <h3>Saved Projects</h3>
-      {projects.length === 0 && <p>No projects saved.</p>}
-      <ul>
+    <div className="project-list-container">
+      {projects.length === 0 && <p className="empty-msg">No projects saved yet.</p>}
+      <ul className="project-items">
         {projects.map(p => (
-          <li key={p._id} onClick={() => handleLoad(p._id)} style={{cursor: 'pointer'}}>
-            {p.name} - <small>{new Date(p.createdAt).toLocaleDateString()}</small>
+          <li key={p._id} className="project-item" onClick={() => handleLoad(p._id)}>
+            <div className="project-info">
+              <span className="project-name">{p.name}</span>
+              <span className="project-date">{new Date(p.createdAt).toLocaleDateString()}</span>
+            </div>
+            <div className="project-actions">
+              <button 
+                onClick={(e) => handleRename(e, p._id, p.name)}
+                className="action-btn rename"
+                title="Rename"
+              >
+                ✎
+              </button>
+              <button 
+                onClick={(e) => handleDelete(e, p._id, p.name)}
+                className="action-btn delete"
+                title="Delete"
+              >
+                ×
+              </button>
+            </div>
           </li>
         ))}
       </ul>
-      <button onClick={fetchProjects}>Refresh List</button>
+      <button className="refresh-btn" onClick={fetchProjects}>Refresh List</button>
     </div>
   );
 }

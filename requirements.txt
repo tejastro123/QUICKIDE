@@ -5,6 +5,7 @@ markdown
 # Quantum SDK
 qiskit
 qiskit-aer
+qiskit-ibm-runtime
 
 # Plotting & Visualization
 matplotlib

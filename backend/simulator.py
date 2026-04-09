@@ -107,27 +107,68 @@ def build_qiskit_circuit(ir):
 
     return qc, classical_bits
 
-def simulate(ir, title="Quantum Simulation"):
+def get_qasm(ir):
+    """Returns the OpenQASM 3.0 representation of the circuit."""
+    qc, _ = build_qiskit_circuit(ir)
+    if qc:
+        return qc.qasm()
+    return "// No circuit generated"
+
+def simulate(ir, title="Quantum Simulation", backend_name="ideal"):
+    """
+    Simulates the circuit. 
+    backend_name can be 'ideal', 'fake_manila', or 'fake_nairobi'.
+    """
     result = build_qiskit_circuit(ir)
     if result is None or result[0] is None:
         print("[INFO] No circuit to simulate (likely 'convert' instruction handled).")
         return
 
     qc, classical_bits = result
+    
+    # Setup simulator
     sim = Aer.get_backend('aer_simulator')
+    noise_model = None
+    basis_gates = None
+    
+    # Apply noise model if requested
+    if backend_name != "ideal":
+        try:
+            from qiskit_aer.noise import NoiseModel
+            if backend_name == "fake_manila":
+                from qiskit_ibm_runtime.fake_provider import FakeManila
+                device_backend = FakeManila()
+            elif backend_name == "fake_nairobi":
+                from qiskit_ibm_runtime.fake_provider import FakeNairobi
+                device_backend = FakeNairobi()
+                
+            noise_model = NoiseModel.from_backend(device_backend)
+            basis_gates = noise_model.basis_gates
+            print(f"[INFO] Using noise model for {backend_name}")
+        except ImportError:
+            print("[WARNING] qiskit-ibm-runtime not found. Falling back to ideal simulation.")
+        except Exception as e:
+            print(f"[ERROR] Failed to load noise model: {e}")
 
     try:
-        job = sim.run(transpile(qc, sim), shots=1024)
+        # Transpile for the specific simulator/noise model
+        transpiled_qc = transpile(qc, sim, basis_gates=basis_gates)
+        
+        # Run simulation
+        job = sim.run(transpiled_qc, shots=1024, noise_model=noise_model)
         result = job.result()
         counts = result.get_counts()
 
-        print(f"\n--- {title} Simulation Results ---")
+        print(f"\n--- {title} Simulation Results ({backend_name}) ---")
         print("Counts:", counts)
         print("Backend:", sim.name)
         print("Total time taken:", result.time_taken, "seconds")
+        if noise_model:
+            print("Noise Model Applied: Yes")
 
         fig = plot_histogram(counts)
-        fig.suptitle(title)
+        fig.suptitle(f"{title} ({backend_name})")
+        
         # Save plot to PNG in memory
         buf = io.BytesIO()
         fig.savefig(buf, format='png')
@@ -137,6 +178,47 @@ def simulate(ir, title="Quantum Simulation"):
         
     except Exception as e:
         print(f"[SIMULATION ERROR] {e}")
+
+
+def get_debug_step(ir, step_index):
+    """
+    Returns the statevector and circuit visualization for a partial IR 
+    (from instruction 0 to step_index).
+    """
+    qubits = ir.get("qubits", [])
+    instructions = ir.get("instructions", [])
+    
+    # Slice instructions up to step_index (inclusive)
+    # Note: if step_index is -1, it means the initial state before any gates
+    partial_instructions = instructions[:step_index + 1]
+    partial_ir = {
+        "qubits": qubits,
+        "instructions": partial_instructions
+    }
+    
+    qc, _ = build_qiskit_circuit(partial_ir)
+    if qc is None:
+        # Fallback to empty circuit
+        qc = QuantumCircuit(len(qubits))
+
+    # Calculate Statevector (Exact mathematical state)
+    sv = Statevector.from_instruction(qc)
+    
+    # Generate partial circuit visualization
+    # We use the same visualize_circuit function but for the partial QC
+    try:
+        from backend.visualize import visualize_circuit
+        circuit_img = visualize_circuit(partial_ir, title=f"Debug Step {step_index + 1}")
+    except Exception as e:
+        print(f"[DEBUG VISUALIZE ERROR] {e}")
+        circuit_img = None
+
+    return {
+        "statevector": sv.data.tolist(), # Convert to list of complex numbers (serializable)
+        "num_qubits": len(qubits),
+        "circuit_img": circuit_img,
+        "current_gate": instructions[step_index]["op"] if step_index >= 0 else "Initial State"
+    }
 
 
 if __name__ == "__main__":

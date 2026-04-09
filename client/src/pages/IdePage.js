@@ -9,13 +9,19 @@ import CodeEditor from '../components/CodeEditor';
 import AstIrViewer from '../components/AstIrViewer';
 import ImageViewer from '../components/ImageViewer';
 import Console from '../components/Console';
+import QasmViewer from '../components/QasmViewer';
+import DebuggerPanel from '../components/DebuggerPanel';
 
-// This component receives ALL state and handlers from App.js as props
 function IdePage({
-  code, setCode, ast, ir, logs, circuitUrl, histogramUrl,
-  isParsing, isCompiling, isVisualizing, isSimulating,
+  code, setCode, ast, ir, qasm, logs, circuitUrl, histogramUrl,
+  isDebugMode, debugStep, debugData,
+  isParsing, isCompiling, isVisualizing, isSimulating, isTranspiling, isDebugging,
+  isSubmittingCloud,
+  backend, setBackend,
   handleParse, handleCompile, handleVisualize, handleSimulate,
-  handleClear, handleSave, handleOpenFileClick
+  handleClear, handleSave, handleOpenFileClick,
+  toggleDebugMode, stepForward, stepBackward,
+  handleCloudSubmit
 }) {
   return (
     <div className="ide-container">
@@ -27,6 +33,13 @@ function IdePage({
         onClear={handleClear}
         onSave={handleSave}
         onOpenFile={handleOpenFileClick}
+        backend={backend}
+        setBackend={setBackend}
+        isDebugMode={isDebugMode}
+        toggleDebugMode={toggleDebugMode}
+        onStepForward={stepForward}
+        onStepBackward={stepBackward}
+        onCloudSubmit={handleCloudSubmit}
       />
       <main className="main-content">
         <Allotment defaultSizes={[3, 2]}>
@@ -39,15 +52,19 @@ function IdePage({
                 <CodeEditor code={code} setCode={setCode} />
               </div>
               <div className="panel-container">
-                <div className="panel-header">Circuit Visualization</div>
+                <div className="panel-header">{isDebugMode ? "Debug View (Current State)" : "Circuit Visualization"}</div>
                 <ImageViewer
                   title="Quantum Circuit"
                   imageUrl={circuitUrl}
-                  placeholder={isVisualizing ? "Visualizing..." : "Run 'Visualize' to see circuit."}
+                  placeholder={
+                    isDebugging ? "Updating..." : 
+                    isVisualizing ? "Visualizing..." : 
+                    "Run 'Visualize' or start 'Debug' to see circuit."
+                  }
                 />
               </div>
               <div className="panel-container">
-                <div className="panel-header">Console Output</div>
+                <div className="panel-header">Terminal Console</div>
                 <Console logs={logs} />
               </div>
             </Allotment>
@@ -55,10 +72,22 @@ function IdePage({
 
           {/* === RIGHT PANE === */}
           <Allotment.Pane>
-            <Allotment vertical defaultSizes={[100, 80]}>
+            <Allotment vertical defaultSizes={[1, 1, 1]}>
               <div className="panel-container">
-                <div className="panel-header">AST / IR Viewer</div>
-                <AstIrViewer ast={ast} ir={ir} />
+                <div className="panel-header">{isDebugMode ? "Quantum Statevector" : "AST / IR Viewer"}</div>
+                {isDebugMode ? (
+                  <DebuggerPanel 
+                    debugData={debugData} 
+                    stepIndex={debugStep} 
+                    totalSteps={ir ? ir.instructions.length : 0} 
+                  />
+                ) : (
+                  <AstIrViewer ast={ast} ir={ir} />
+                )}
+              </div>
+              <div className="panel-container">
+                <div className="panel-header">OpenQASM 3.0 Transpiler</div>
+                <QasmViewer qasm={qasm} placeholder={isTranspiling ? "Transpiling..." : null} />
               </div>
               <div className="panel-container">
                 <div className="panel-header">Simulation Histogram</div>

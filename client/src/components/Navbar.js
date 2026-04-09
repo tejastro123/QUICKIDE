@@ -24,6 +24,7 @@ function Navbar() {
           <>
             <Link to="/">IDE</Link>
             <Link to="/resources">Projects & Tutorials</Link>
+            <Link to="/cloud">Cloud</Link>
             <> </>
             {/* Replaced invalid anchor with an accessible button styled like a link */}
             <button

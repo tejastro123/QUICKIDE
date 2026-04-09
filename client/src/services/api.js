@@ -31,8 +31,16 @@ export const getVisualization = (ir) => {
   return api.post('/run/visualize', { ir }, { responseType: 'blob' });
 };
 
-export const getSimulation = (ir) => {
-  return api.post('/run/simulate', { ir }, { responseType: 'blob' });
+export const transpileAst = (ir) => {
+  return api.post('/run/transpile', { ir });
+};
+
+export const getDebugStep = (ir, index) => {
+  return api.post('/run/debug/step', { ir, index });
+};
+
+export const getSimulation = (ir, backend = 'ideal') => {
+  return api.post('/run/simulate', { ir, backend }, { responseType: 'blob' });
 };
 
 // --- Project Functions ---
@@ -47,4 +55,34 @@ export const getProject = (id) => {
 
 export const getAllProjects = () => {
   return api.get('/projects');
+};
+
+// --- Cloud & Job Functions ---
+
+export const getIbmToken = () => {
+  return api.get('/user/token');
+};
+
+export const updateIbmToken = (ibmToken) => {
+  return api.post('/user/token', { ibmToken });
+};
+
+export const submitCloudJob = (ir, backend, projectName) => {
+  return api.post('/cloud/submit', { ir, backend, projectName });
+};
+
+export const getCloudJobs = () => {
+  return api.get('/cloud/jobs');
+};
+
+export const syncCloudJobs = () => {
+  return api.post('/cloud/sync');
+};
+
+export const renameProject = (id, name) => {
+  return api.put(`/projects/${id}`, { name });
+};
+
+export const deleteProject = (id) => {
+  return api.delete(`/projects/${id}`);
 };

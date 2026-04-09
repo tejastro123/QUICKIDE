@@ -1,149 +1,111 @@
+# ⚡ QUICKIDE 2.0 — Advanced Quantum Circuit IDE
 
-# ⚡ QUICKIDE — Quantum Circuit IDE using QuCPL  
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)  
-![License](https://img.shields.io/badge/License-MIT-green)  
-![Platform](https://img.shields.io/badge/Platform-Cross--Platform-lightgrey)  
-![Status](https://img.shields.io/badge/Status-Active--Development-orange)
+![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react)
+![Node](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js)
+![Python](https://img.shields.io/badge/Engine-Python%203.10%2B-3776AB?logo=python)
+![Qiskit](https://img.shields.io/badge/Quantum-Qiskit-6929C4?logo=qiskit)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-> 🧠 **Write. Simulate. Visualize. Export.** — All-in-one lightweight GUI IDE for quantum programs written in **QuCPL**.
+> 🧠 **Write. Debug. Simulate. Deploy.** — The modern fullstack Integrated Development Environment for the next generation of Quantum Developers.
 
+---
 
 ## 🧭 Overview
 
-**QUICKIDE** is a lightweight, Python-based Integrated Development Environment designed for visual quantum programming using the custom **Quantum Circuit Programming Language (QuCPL)**. It combines code editing, real-time parsing, circuit visualization, simulation, and export capabilities — all inside a user-friendly GUI built with Tkinter. Whether you're a student, researcher, or quantum enthusiast, QUICKIDE streamlines quantum program development from source code to simulation output.
+**QuickIDE 2.0** is a professional-grade quantum platform that transcends traditional educational tools. Completely rebuilt from the ground up, it combines a premium, high-performance web interface with an advanced quantum simulation engine powered by Qiskit.
 
+Whether you are crafting intricate Bell states or deploying algorithms to real IBM Quantum hardware, QuickIDE 2.0 provides the tools, the aesthetics, and the depth required for industry-standard quantum development.
 
-## 🚀 Features
+---
 
-- ✍️ Code editor with QuCPL syntax support
-- 🔍 AST and IR generation from QuCPL source
-- 🧩 Visual circuit builder and viewer
-- 🧪 Quantum simulation with statevector outputs
-- 🔁 Measurement, entanglement, and multi-qubit operation support
-- 📊 Bloch sphere visualization (1 and multi-qubit)
-- 📸 In-GUI graph and circuit rendering
-- 💾 Export capabilities: AST, IR, images, simulation logs
-- 📂 Project structure with samples and tutorial files
-- 📌 Error handling, log terminal, and detailed help sections
-- 🧠 Built-in tutorial programs for Bell, GHZ, teleportation, etc.
+## 🚀 The Three Pillars of QuickIDE 2.0
 
+### 1. Modern Developer Experience (IDE)
 
-## ⚙️ Tech Stack
+* 🎨 **Premium Aesthetic**: A dark-mode, glassmorphism UI built for long-duration coding sessions.
+* 🧠 **Quantum IntelliSense**: Monaco-powered code editor with custom QuCPL syntax highlighting and gate-level autocomplete.
+* 🐞 **Gate-Level Debugger**: The first IDE to offer a "Step-By-Step" quantum debugger. Inspect the exact **Statevector** and probability amplitudes at every single gate instruction.
 
-- **Language**: Python 3.10+
-- **GUI**: Tkinter, ttk
-- **Visualization**: Matplotlib
-- **Custom Compiler**: QuCPL parser, AST → IR translator, simulator
-- **Backend**: JSON-based IR processing, logic engine
-- **Frontend Modules**: `editor.py`, `viewer.py`, `terminal.py`, `visualize.py`, `bloch.py`
+### 2. Advanced Simulation Engine
 
+* 🧪 **Hardware Noise Modeling**: Switch between ideal simulation and noisy hardware emulation (Manila, Nairobi) to understand real-world quantum decoherence.
+* 🔁 **OpenQASM 3.0 Transpilation**: Automatic conversion from the high-level QuCPL language to industry-standard OpenQASM 3.0.
+* 📊 **Rich Visualizations**: Real-time circuit diagrams, probability histograms, and statevector tables.
 
-## 🛠️ Installation
+### 3. IBM Quantum Cloud Integration
+
+* 🚀 **Real Hardware Submission**: Connect your IBM API Token to submit jobs directly to live quantum processors (e.g., `ibm_osaka`).
+* ☁️ **Cloud Dashboard**: A dedicated workspace to manage your hardware job history, poll for results, and analyze multi-shot experiments.
+
+---
+
+## 🛠️ Tech Stack
+
+QuickIDE 2.0 is a distributed fullstack application:
+
+* **Frontend**: React.js with `allotment` for flexible IDE tiling.
+* **Backend API**: Node.js & Express.
+* **Quantum Core**: Flask (Python) with Qiskit SDK.
+* **Database**: MongoDB (Project & Job persistence).
+* **Authentication**: JWT-based secure session management.
+
+---
+
+## ⚙️ Quick Start (Development Mode)
+
+QuickIDE 2.0 requires three services to run concurrently:
+
+### 1. Database & Server (Node.js)
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/tejastro123/QUICKIDE.git
-cd QUICKIDE
-
-# 2. (Optional) Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Run the application
-python main.py
-````
-
-## 📚 Usage Guide
-
-1. **Write a QuCPL program** in the code editor tab.
-2. Click **"Generate AST & IR"** to compile and visualize the program's structure.
-3. Use the **"Visualize"** button to see the quantum circuit diagram.
-4. Run **"Simulate"** to compute the output and statevector.
-5. View **Bloch Spheres**, **histograms**, or **statevector graphs** under respective tabs.
-6. Use **Export** buttons to save images and logs.
-
-✔️ *Preloaded tutorial programs like Bell State and Quantum Teleportation can be loaded from the tutorial dropdown.*
-
-
-## 📁 File Structure
-
-```
-QUICKIDE/
-│
-├── backend/              # Core logic: parser, compiler, simulator
-│   ├── parser.py
-│   ├── compiler.py
-│   ├── simulation.py
-│   ├── visualize.py
-│   └── utils.py
-│
-├── ui/                   # UI components (modular tabs)
-│   ├── editor.py
-│   ├── viewer.py
-│   ├── terminal.py
-│   ├── bloch.py
-│   └── help_tab.py
-│
-├── samples/              # Sample QuCPL programs
-├── docs/                 # Documentation and images
-├── main.py               # Main launcher script
-├── requirements.txt
-└── README.md
+cd server
+npm install
+# Create .env with MONGO_URI and JWT_SECRET
+npm run dev
 ```
 
+### 2. Quantum Engine (Python API)
 
-## 🔬 Sample Programs
+```bash
+cd compiler_api
+pip install -r ../requirements.txt
+python app.py
+```
 
-Inside `/samples/` and accessible via the tutorial menu:
+### 3. Frontend (React)
 
-* ✅ Bell State Generator
-* ✅ GHZ State
-* ✅ Quantum Teleportation
-* ✅ Superposition Demo
-* ✅ Entanglement Visualizer
+```bash
+cd client
+npm install
+npm start
+```
 
+---
+
+## 📚 QuCPL: Language at a Glance
+
+QuickIDE uses the **Quantum Circuit Programming Language (QuCPL)**, a high-level syntax designed for clarity:
+
+```qucpl
+// Create an entangled pair (Bell State)
+qubit q0, q1;
+qop h q0;
+qop cx q0, q1;
+measure q0, q1 -> c0, c1;
+```
+
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome!
+Contributions are welcome! Please see our [Developer Guide](CONTRIBUTING.md) to get started with the QuCPL grammar and compiler logic.
 
-* Fork this repository
-* Create a new branch (`git checkout -b feature/your-feature`)
-* Commit your changes (`git commit -m 'Add awesome feature'`)
-* Push to the branch (`git push origin feature/your-feature`)
-* Open a Pull Request
-
-Feel free to open [issues](https://github.com/tejastro123/QUICKIDE/issues) for bugs, suggestions, or enhancements.
-
+---
 
 ## 📄 License
 
-This project is licensed under the **MIT License**. See `LICENSE` for details.
-
-
-## 🙏 Credits & Acknowledgements
-
-* Project by **Tejas Mellimpudi**
-* Quantum compiler engine: Custom QuCPL language & IR
-* Special thanks to mentors and contributors from BITS Pilani
-* Built using Python, Tkinter, Matplotlib, and love for quantum computing 💡
-
-
-## 🧠 Future Roadmap
-
-* [ ] 🧩 OpenQASM import/export support
-* [ ] 🧠 Language server-like features (autocomplete, tooltips, error underlining)
-* [ ] 🧪 Formal verification tools and assertion checking
-* [ ] 🐞 Built-in quantum debugger
-* [ ] 🌐 Cross-platform packaging with PyInstaller + auto-updater
-* [ ] 🧾 Documentation site via MkDocs
-* [ ] 🔐 Authentication and project save/load system
+This project is licensed under the **MIT License**.
 
 ---
 
-> *Crafted with precision and curiosity to bring quantum programming to your fingertips.*
-
----
+> *Crafted with precision to bring the power of the quantum cloud to your fingertips.*
