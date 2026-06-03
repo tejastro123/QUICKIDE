@@ -114,8 +114,8 @@ export const deleteProject = (id) => {
 
 // --- Phase 2 Functions ---
 
-export const reverseTranspile = (qasm) => {
-  return api.post('/run/transpile/reverse', { qasm });
+export const reverseTranspile = (qiskit) => {
+  return api.post('/run/transpile/reverse', { qasm: qiskit });
 };
 
 export const optimizeIr = (ir) => {

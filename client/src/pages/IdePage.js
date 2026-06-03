@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
-import '../App.css'; // Use the main App.css
+import '../App.css';
 
-// Import all your components
 import Toolbar from '../components/Toolbar';
 import CodeEditor from '../components/CodeEditor';
 import AstIrViewer from '../components/AstIrViewer';
 import ImageViewer from '../components/ImageViewer';
 import Console from '../components/Console';
-import QasmViewer from '../components/QasmViewer';
+import QiskitViewer from '../components/QiskitViewer';
 import DebuggerPanel from '../components/DebuggerPanel';
-
-// Phase 2 Components
 import AlgorithmLibrary from '../components/AlgorithmLibrary';
 import OptimizerSuggestions from '../components/OptimizerSuggestions';
 import MultiCircuitComparison from '../components/MultiCircuitComparison';
+
+import {
+  Code2, Cpu, TerminalSquare,
+  FlaskConical, BarChart3, GitCompare,
+  GitBranch, Zap
+} from 'lucide-react';
 
 function IdePage({
   code, setCode, ast, ir, qasm, qiskitCode, logs, circuitUrl, histogramUrl,
@@ -27,15 +30,21 @@ function IdePage({
   handleClear, handleSave, handleOpenFileClick,
   toggleDebugMode, stepForward, stepBackward,
   handleCloudSubmit,
-  
-  // Phase 2 props
-  onImportQasm,
-  onOptimizeAccept,
-  onShare,
+  onImportQiskit, onOptimizeAccept, onShare,
   log
 }) {
-  const [topTab, setTopTab] = useState('ast_ir'); // 'ast_ir', 'optimizer', 'algorithms'
-  const [bottomTab, setBottomTab] = useState('histogram'); // 'histogram', 'comparison'
+  const [topTab, setTopTab]       = useState('ast_ir');
+  const [bottomTab, setBottomTab] = useState('histogram');
+
+  const TabBtn = ({ id, active, onClick, icon: Icon, label }) => (
+    <button
+      onClick={onClick}
+      className={`panel-tab-btn${active ? ' active' : ''}`}
+    >
+      {Icon && <Icon size={12} />}
+      {label}
+    </button>
+  );
 
   return (
     <div className="ide-container">
@@ -47,7 +56,7 @@ function IdePage({
         onClear={handleClear}
         onSave={handleSave}
         onOpenFile={handleOpenFileClick}
-        onImportQasm={onImportQasm}
+        onImportQiskit={onImportQiskit}
         onShare={onShare}
         backend={backend}
         setBackend={setBackend}
@@ -56,117 +65,119 @@ function IdePage({
         onStepForward={stepForward}
         onStepBackward={stepBackward}
         onCloudSubmit={handleCloudSubmit}
+        isParsing={isParsing}
+        isCompiling={isCompiling}
+        isVisualizing={isVisualizing}
+        isSimulating={isSimulating}
+        isTranspiling={isTranspiling}
+        isDebugging={isDebugging}
+        isSubmittingCloud={isSubmittingCloud}
       />
-      <main className="main-content">
-        <Allotment defaultSizes={[3, 2]}>
 
-          {/* === LEFT PANE === */}
+      <main className="main-content">
+        <Allotment defaultSizes={[55, 45]}>
+
+          {/* ===================== LEFT PANE ===================== */}
           <Allotment.Pane>
-            <Allotment vertical defaultSizes={[100, 80, 60]}>
+            <Allotment vertical defaultSizes={[55, 28, 17]}>
+
+              {/* Code Editor */}
               <div className="panel-container">
-                <div className="panel-header">QuCPL Code Editor</div>
+                <div className="panel-header">
+                  <Code2 size={13} className="panel-header-icon" />
+                  QuCPL Code Editor
+                  {isParsing && <span style={styles.activityDot} />}
+                </div>
                 <CodeEditor code={code} setCode={setCode} />
               </div>
+
+              {/* Circuit Visualization */}
               <div className="panel-container">
-                <div className="panel-header">{isDebugMode ? "Debug View (Current State)" : "Circuit Visualization"}</div>
+                <div className="panel-header">
+                  <Cpu size={13} className="panel-header-icon" />
+                  {isDebugMode ? 'Debug View — Current State' : 'Circuit Visualization'}
+                  {(isVisualizing || isDebugging) && <span style={styles.activityDot} />}
+                </div>
                 <ImageViewer
                   title="Quantum Circuit"
                   imageUrl={circuitUrl}
                   placeholder={
-                    isDebugging ? "Updating..." : 
-                    isVisualizing ? "Visualizing..." : 
-                    "Run 'Visualize' or start 'Debug' to see circuit."
+                    isDebugging   ? 'Updating circuit…' :
+                    isVisualizing ? 'Visualizing…'       :
+                    "Run 'Visualize' or start Debug to see circuit."
                   }
                 />
               </div>
+
+              {/* Terminal Console */}
               <div className="panel-container">
-                <div className="panel-header">Terminal Console</div>
+                <div className="panel-header">
+                  <TerminalSquare size={13} className="panel-header-icon" />
+                  Terminal Console
+                </div>
                 <Console logs={logs} />
               </div>
+
             </Allotment>
           </Allotment.Pane>
 
-          {/* === RIGHT PANE === */}
+          {/* ===================== RIGHT PANE ===================== */}
           <Allotment.Pane>
-            <Allotment vertical defaultSizes={[1.2, 0.8, 1.2]}>
-              {/* Top Tabbed Panel */}
+            <Allotment vertical defaultSizes={[38, 28, 34]}>
+
+              {/* Top panel — AST/IR | Optimizer | Algorithm Library | Debugger */}
               <div className="panel-container">
                 {isDebugMode ? (
                   <>
-                    <div className="panel-header">Quantum Statevector</div>
-                    <DebuggerPanel 
-                      debugData={debugData} 
-                      stepIndex={debugStep} 
-                      totalSteps={ir ? ir.instructions.length : 0} 
+                    <div className="panel-header">
+                      <FlaskConical size={13} className="panel-header-icon" />
+                      Quantum Statevector
+                      {isDebugging && <span style={styles.activityDot} />}
+                    </div>
+                    <DebuggerPanel
+                      debugData={debugData}
+                      stepIndex={debugStep}
+                      totalSteps={ir ? ir.instructions.length : 0}
                     />
                   </>
                 ) : (
                   <>
-                    <div className="panel-header" style={styles.tabHeader}>
-                      <button 
-                        onClick={() => setTopTab('ast_ir')}
-                        style={{...styles.tabBtn, ...(topTab === 'ast_ir' ? styles.activeTab : {})}}
-                      >
-                        AST / IR Viewer
-                      </button>
-                      <button 
-                        onClick={() => setTopTab('optimizer')}
-                        style={{...styles.tabBtn, ...(topTab === 'optimizer' ? styles.activeTab : {})}}
-                      >
-                        Circuit Optimizer
-                      </button>
-                      <button 
-                        onClick={() => setTopTab('algorithms')}
-                        style={{...styles.tabBtn, ...(topTab === 'algorithms' ? styles.activeTab : {})}}
-                      >
-                        Algorithm Library
-                      </button>
+                    <div className="panel-tabs">
+                      <TabBtn id="ast_ir"    active={topTab==='ast_ir'}    onClick={()=>setTopTab('ast_ir')}    icon={GitBranch}  label="AST / IR" />
+                      <TabBtn id="optimizer" active={topTab==='optimizer'} onClick={()=>setTopTab('optimizer')} icon={Zap}        label="Optimizer" />
+                      <TabBtn id="algorithms"active={topTab==='algorithms'}onClick={()=>setTopTab('algorithms')}icon={FlaskConical}label="Algorithms" />
                     </div>
-                    {topTab === 'ast_ir' && <AstIrViewer ast={ast} ir={ir} />}
-                    {topTab === 'optimizer' && (
-                      <OptimizerSuggestions 
-                        ir={ir} 
-                        onOptimizeAccept={onOptimizeAccept}
-                        log={log}
-                      />
-                    )}
-                    {topTab === 'algorithms' && (
-                      <AlgorithmLibrary 
-                        onLoadCode={setCode}
-                        log={log}
-                      />
-                    )}
+                    {topTab === 'ast_ir'     && <AstIrViewer ast={ast} ir={ir} />}
+                    {topTab === 'optimizer'  && <OptimizerSuggestions ir={ir} onOptimizeAccept={onOptimizeAccept} log={log} />}
+                    {topTab === 'algorithms' && <AlgorithmLibrary onLoadCode={setCode} log={log} />}
                   </>
                 )}
               </div>
 
-              {/* Middle Panel - Qiskit Python Transpiler */}
+              {/* Middle panel — Qiskit Transpiler */}
               <div className="panel-container">
-                <div className="panel-header">Qiskit Python Transpiler</div>
-                <QasmViewer qasm={qiskitCode} placeholder={isTranspiling ? "Transpiling to Qiskit..." : null} />
+                <div className="panel-header">
+                  <Code2 size={13} className="panel-header-icon" />
+                  Qiskit Python Transpiler
+                  {isTranspiling && <span style={styles.activityDot} />}
+                </div>
+                <QiskitViewer
+                  qiskitCode={qiskitCode}
+                  placeholder={isTranspiling ? 'Transpiling to Qiskit…' : null}
+                />
               </div>
 
-              {/* Bottom Tabbed Panel */}
+              {/* Bottom panel — Histogram | Multi-Circuit Comparison */}
               <div className="panel-container">
-                <div className="panel-header" style={styles.tabHeader}>
-                  <button 
-                    onClick={() => setBottomTab('histogram')}
-                    style={{...styles.tabBtn, ...(bottomTab === 'histogram' ? styles.activeTab : {})}}
-                  >
-                    Simulation Histogram
-                  </button>
-                  <button 
-                    onClick={() => setBottomTab('comparison')}
-                    style={{...styles.tabBtn, ...(bottomTab === 'comparison' ? styles.activeTab : {})}}
-                  >
-                    Multi-Circuit Comparison
-                  </button>
+                <div className="panel-tabs">
+                  <TabBtn id="histogram"  active={bottomTab==='histogram'}  onClick={()=>setBottomTab('histogram')}  icon={BarChart3}  label="Histogram" />
+                  <TabBtn id="comparison" active={bottomTab==='comparison'} onClick={()=>setBottomTab('comparison')} icon={GitCompare} label="Compare Circuits" />
                 </div>
                 {bottomTab === 'histogram' && (
                   <ImageViewer
                     title="Simulation Histogram"
                     imageUrl={histogramUrl}
-                    placeholder={isSimulating ? "Simulating..." : "Run 'Simulate' to see results."}
+                    placeholder={isSimulating ? 'Simulating…' : "Run 'Simulate' to see results."}
                   />
                 )}
                 {bottomTab === 'comparison' && (
@@ -179,6 +190,7 @@ function IdePage({
                   />
                 )}
               </div>
+
             </Allotment>
           </Allotment.Pane>
 
@@ -189,29 +201,16 @@ function IdePage({
 }
 
 const styles = {
-  tabHeader: {
-    display: 'flex',
-    gap: '8px',
-    padding: '4px 8px',
-    background: 'rgba(255, 255, 255, 0.02)',
-    borderBottom: '1px solid var(--border-color)',
-    alignItems: 'center',
-  },
-  tabBtn: {
-    background: 'none',
-    border: 'none',
-    color: 'var(--text-secondary)',
-    padding: '6px 12px',
-    fontSize: '0.78rem',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    transition: 'all 0.2s',
-  },
-  activeTab: {
-    background: 'rgba(59, 130, 246, 0.15)',
-    color: 'var(--primary-color)',
+  activityDot: {
+    display: 'inline-block',
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    background: 'var(--quantum-green)',
+    boxShadow: '0 0 6px var(--quantum-green)',
+    animation: 'pulseGlow 1.5s ease-in-out infinite',
+    marginLeft: '6px',
+    flexShrink: 0,
   }
 };
 

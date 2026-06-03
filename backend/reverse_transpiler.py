@@ -204,3 +204,136 @@ def _transpile_single_gate(stmt: str, warnings: list[str]) -> str | None:
         return None
     names = ", ".join(f"{n}{i}" for n, i in qargs)
     return f"qop {qucpl_gate} {names};"
+
+
+def qiskit_to_qucpl(qiskit_src: str) -> Tuple[str, list[str]]:
+    """
+    Convert a Qiskit Python script to equivalent QuCPL source.
+    """
+    lines_out: list[str] = ["// Transpiled from Qiskit by QuickIDE\n"]
+    warnings: list[str] = []
+
+    # Track registers
+    qreg_matches = re.findall(r"QuantumRegister\s*\(\s*(\d+)\s*(?:,\s*['\"](\w+)['\"])?\s*\)", qiskit_src)
+    qregs = {}
+    for size_str, name in qreg_matches:
+        reg_name = name if name else 'q'
+        qregs[reg_name] = int(size_str)
+
+    qc_size_match = re.search(r"QuantumCircuit\s*\(\s*(\d+)\s*\)", qiskit_src)
+    if qc_size_match and not qregs:
+        qregs['q'] = int(qc_size_match.group(1))
+
+    creg_matches = re.findall(r"ClassicalRegister\s*\(\s*(\d+)\s*(?:,\s*['\"](\w+)['\"])?\s*\)", qiskit_src)
+    cregs = {}
+    for size_str, name in creg_matches:
+        reg_name = name if name else 'c'
+        cregs[reg_name] = int(size_str)
+
+    if not qregs:
+        used_indices = [int(x) for x in re.findall(r"q\s*\[\s*(\d+)\s*\]", qiskit_src)]
+        if used_indices:
+            qregs['q'] = max(used_indices) + 1
+        else:
+            qregs['q'] = 1
+
+    names = []
+    for reg, size in qregs.items():
+        for i in range(size):
+            names.append(f"{reg}{i}")
+    if names:
+        lines_out.append("qubit " + ", ".join(names) + ";")
+
+    # Parse instructions
+    for raw_line in qiskit_src.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "QuantumCircuit" in line or "Register" in line or "import" in line or "Aer" in line or "backend" in line or "job" in line or "result" in line or "counts" in line or "print" in line:
+            continue
+
+        m = re.search(r"circuit\.(\w+)\s*\((.*)\)", line)
+        if not m:
+            continue
+
+        op = m.group(1)
+        args_str = m.group(2)
+
+        cond_var = None
+        cond_val = None
+        c_if_match = re.search(r"\.c_if\s*\(\s*(\w+)\s*,\s*(\d+)\s*\)", line)
+        if c_if_match:
+            cond_var = c_if_match.group(1)
+            cond_val = c_if_match.group(2)
+
+        q_args = []
+        c_args = []
+        tokens = [t.strip() for t in args_str.split(",")]
+        params = []
+        for t in tokens:
+            qm = re.match(r"(\w+)\s*\[\s*(\d+)\s*\]", t)
+            if qm:
+                reg, idx = qm.group(1), qm.group(2)
+                if reg in cregs or reg.startswith('c'):
+                    c_args.append(f"{reg}{idx}")
+                else:
+                    q_args.append(f"{reg}{idx}")
+            else:
+                try:
+                    val_str = t.replace("pi", "3.14159265358979")
+                    val = float(eval(val_str, {"__builtins__": {}}, {}))
+                    params.append(f"{val:.6f}")
+                except Exception:
+                    if t:
+                        params.append(t)
+
+        if op == "measure":
+            if len(q_args) >= 1 and len(c_args) >= 1:
+                stmt = f"measure {q_args[0]} -> {c_args[0]};"
+                if cond_var:
+                    lines_out.append(f"if ({cond_var}0 == {cond_val}) {{")
+                    lines_out.append(f"  {stmt}")
+                    lines_out.append("}")
+                else:
+                    lines_out.append(stmt)
+            else:
+                warnings.append(f"measure statement args not parsed properly: {line}")
+            continue
+
+        if op == "barrier":
+            stmt = f"barrier {', '.join(q_args)};"
+            lines_out.append(stmt)
+            continue
+
+        if op == "reset":
+            if q_args:
+                stmt = f"reset {q_args[0]};"
+                if cond_var:
+                    lines_out.append(f"if ({cond_var}0 == {cond_val}) {{")
+                    lines_out.append(f"  {stmt}")
+                    lines_out.append("}")
+                else:
+                    lines_out.append(stmt)
+            continue
+
+        qucpl_gate = _GATE_MAP.get(op)
+        if op == "i":
+            qucpl_gate = "id"
+
+        if qucpl_gate is None:
+            warnings.append(f"unknown gate/operation '{op}' — skipped")
+            continue
+
+        q_names = ", ".join(q_args)
+        if params:
+            param_str = ", ".join(params)
+            stmt = f"qop {qucpl_gate}({param_str}) {q_names};"
+        else:
+            stmt = f"qop {qucpl_gate} {q_names};"
+
+        if cond_var:
+            lines_out.append(f"if ({cond_var}0 == {cond_val}) {{")
+            lines_out.append(f"  {stmt}")
+            lines_out.append("}")
+        else:
+            lines_out.append(stmt)
+
+    return "\n".join(lines_out), warnings

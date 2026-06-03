@@ -1,21 +1,29 @@
 import React from 'react';
-import './Modal.css';
+import { X } from 'lucide-react';
 
 function Modal({ isOpen, onClose, title, children, actions }) {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container glassmorphic" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content"
+        onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '480px' }}
+      >
         <div className="modal-header">
-          <h3>{title}</h3>
-          <button className="modal-close-btn" onClick={onClose}>&times;</button>
+          <span className="modal-title">{title}</span>
+          <button className="modal-close-btn" onClick={onClose}>
+            <X size={15} />
+          </button>
         </div>
-        <div className="modal-body">
+
+        <div style={{ padding: '4px 0' }}>
           {children}
         </div>
+
         {actions && (
-          <div className="modal-actions">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
             {actions}
           </div>
         )}

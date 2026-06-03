@@ -691,7 +691,7 @@ def simulate(ir: dict, title: str = "Quantum Simulation",
         fig, ax = plt.subplots(figsize=(max(6, len(labels) * 0.8 + 2), 4))
         bar_color = "#3b82f6" if is_dark else "#5B8CFF"
         bar_edge = "#60a5fa" if is_dark else "#2D4FA3"
-        grid_color = "rgba(255, 255, 255, 0.1)" if is_dark else "rgba(0, 0, 0, 0.1)"
+        grid_color = (1.0, 1.0, 1.0, 0.1) if is_dark else (0.0, 0.0, 0.0, 0.1)
 
         bars = ax.bar(range(len(labels)), values,
                       color=bar_color, edgecolor=bar_edge, linewidth=0.8)

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Routes, Route, useNavigate, useMatch } from 'react-router-dom';
+import { Routes, Route, useNavigate, useMatch, useLocation } from 'react-router-dom';
 import './App.css';
 
 // Import services and components
@@ -14,6 +14,7 @@ import ResourcesPage from './pages/ResourcesPage';
 import CloudPage from './pages/CloudPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import LandingPage from './pages/LandingPage';
 
 // Helper function to create log entries
 const createLog = (message, type = 'info') => ({ message: `[${new Date().toLocaleTimeString()}] ${message}`, type });
@@ -38,8 +39,8 @@ function App() {
   const [debugData, setDebugData] = useState(null);
 
   // --- Phase 2 State ---
-  const [isImportQasmOpen, setIsImportQasmOpen] = useState(false);
-  const [importQasmText, setImportQasmText] = useState('');
+  const [isImportQiskitOpen, setIsImportQiskitOpen] = useState(false);
+  const [importQiskitText, setImportQiskitText] = useState('');
 
   // --- Loading State ---
   const [isParsing, setIsParsing] = useState(false);
@@ -63,9 +64,17 @@ function App() {
   const { isAuthenticated } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const matchShare = useMatch('/share/:shareId');
   const shareId = matchShare?.params?.shareId;
+
+  // Allow landing page to scroll
+  useEffect(() => {
+    const isLanding = location.pathname === '/' && !isAuthenticated;
+    document.body.classList.toggle('landing-open', isLanding);
+    return () => document.body.classList.remove('landing-open');
+  }, [location.pathname, isAuthenticated]);
 
   useEffect(() => {
     if (shareId) {
@@ -109,8 +118,8 @@ function App() {
       setLogs([createLog('User logged out.')]);
       setCircuitUrl(null);
       setHistogramUrl(null);
-      setIsImportQasmOpen(false);
-      setImportQasmText('');
+      setIsImportQiskitOpen(false);
+      setImportQiskitText('');
     }
   }, [isAuthenticated]);
 
@@ -198,7 +207,9 @@ function App() {
   
   const handleSimulate = async (forcedIr = null) => {
     if (!isAuthenticated) return log('Please log in.', 'error');
-    let currentIr = forcedIr || ir;
+    // If forcedIr is a React event object, ignore it
+    const cleanIr = (forcedIr && typeof forcedIr.preventDefault === 'function') ? null : forcedIr;
+    let currentIr = cleanIr || ir;
     if (!currentIr) {
       currentIr = await handleCompile();
       if (!currentIr) return;
@@ -430,20 +441,20 @@ function App() {
     }
   };
 
-  const handleImportQasmSubmit = async () => {
-    if (!importQasmText.trim()) return;
-    log('Reverse transpiling OpenQASM to QuCPL...');
+  const handleImportQiskitSubmit = async () => {
+    if (!importQiskitText.trim()) return;
+    log('Reverse transpiling Qiskit to QuCPL...');
     try {
-      const response = await api.reverseTranspile(importQasmText);
+      const response = await api.reverseTranspile(importQiskitText);
       setCode(response.data.code);
       log('Reverse transpilation complete.', 'success');
       if (response.data.warnings && response.data.warnings.length > 0) {
         response.data.warnings.forEach(w => log(`Warning: ${w}`, 'warning'));
       }
-      setIsImportQasmOpen(false);
-      setImportQasmText('');
+      setIsImportQiskitOpen(false);
+      setImportQiskitText('');
     } catch (err) {
-      log(`Import QASM Error: ${err.response?.data?.error || err.message}`, 'error');
+      log(`Import Qiskit Error: ${err.response?.data?.error || err.message}`, 'error');
     }
   };
 
@@ -467,7 +478,9 @@ function App() {
       <input type="file" ref={fileInputRef} onChange={handleFileSelected} accept=".qucpl" style={{ display: 'none' }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} /> 
+        <Route path="/register" element={<RegisterPage />} />
+        {/* Public landing page for guests */}
+        {!isAuthenticated && <Route path="/" element={<LandingPage />} />}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={
             <IdePage
@@ -483,7 +496,7 @@ function App() {
               handleClear={handleClear} handleSave={handleSave} handleOpenFileClick={handleOpenFileClick}
               toggleDebugMode={toggleDebugMode} stepForward={stepForward} stepBackward={stepBackward}
               onShare={handleShare}
-              onImportQasm={() => setIsImportQasmOpen(true)}
+              onImportQiskit={() => setIsImportQiskitOpen(true)}
               onOptimizeAccept={handleOptimizeAccept}
               log={log}
             />
@@ -505,7 +518,7 @@ function App() {
             handleClear={handleClear} handleSave={handleSave} handleOpenFileClick={handleOpenFileClick}
             toggleDebugMode={toggleDebugMode} stepForward={stepForward} stepBackward={stepBackward}
             onShare={handleShare}
-            onImportQasm={() => setIsImportQasmOpen(true)}
+            onImportQiskit={() => setIsImportQiskitOpen(true)}
             onOptimizeAccept={handleOptimizeAccept}
             log={log}
             isSharedView={true}
@@ -513,34 +526,40 @@ function App() {
         } />
       </Routes>
 
-      {/* Import QASM Modal */}
-      {isImportQasmOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}>Import OpenQASM Circuit</h3>
-              <button onClick={() => setIsImportQasmOpen(false)} style={styles.closeBtn}>&times;</button>
-            </div>
-            <p style={styles.modalDesc}>
-              Paste your OpenQASM 2.0 or 3.0 code below to reverse-transpile it into QuCPL format.
-            </p>
-            <textarea
-              value={importQasmText}
-              onChange={(e) => setImportQasmText(e.target.value)}
-              placeholder="// Paste OpenQASM here (e.g. qreg q[2]; creg c[2]; h q[0]; cx q[0],q[1];)"
-              style={styles.modalTextarea}
-            />
-            <div style={styles.modalActions}>
-              <button onClick={() => setIsImportQasmOpen(false)} style={styles.cancelBtn}>
-                Cancel
-              </button>
-              <button onClick={handleImportQasmSubmit} style={styles.submitBtn}>
-                ⚡ Transpile & Load
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Import Qiskit Modal */}
+      <Modal
+        isOpen={isImportQiskitOpen}
+        onClose={() => setIsImportQiskitOpen(false)}
+        title="Import Qiskit Circuit"
+        actions={
+          <>
+            <button className="modal-btn-secondary" onClick={() => setIsImportQiskitOpen(false)}>Cancel</button>
+            <button className="modal-btn-primary" onClick={handleImportQiskitSubmit}>⚡ Transpile & Load</button>
+          </>
+        }
+      >
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.5' }}>
+          Paste your Qiskit Python code below to reverse-transpile it into QuCPL format.
+        </p>
+        <textarea
+          value={importQiskitText}
+          onChange={e => setImportQiskitText(e.target.value)}
+          placeholder="# Paste Qiskit Python code here (e.g. circuit.h(q[0]))"
+          style={{
+            width: '100%', height: '220px',
+            background: 'rgba(0,0,0,0.3)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px',
+            color: 'var(--quantum-cyan)',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.83rem',
+            outline: 'none',
+            resize: 'vertical',
+            boxSizing: 'border-box',
+          }}
+        />
+      </Modal>
       {/* Save Project Modal */}
       <Modal
         isOpen={isSaveModalOpen}
@@ -594,99 +613,6 @@ function App() {
   );
 }
 
-const styles = {
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-    backdropFilter: 'blur(5px)'
-  },
-  modalContent: {
-    backgroundColor: 'var(--panel-bg)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
-    width: '90%',
-    maxWidth: '600px',
-    padding: '24px',
-    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  modalTitle: {
-    margin: 0,
-    fontSize: '1.2rem',
-    color: '#fff',
-    fontWeight: '700'
-  },
-  closeBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#94a3b8',
-    fontSize: '1.5rem',
-    cursor: 'pointer',
-    padding: 0,
-  },
-  modalDesc: {
-    margin: 0,
-    fontSize: '0.85rem',
-    color: '#94a3b8',
-    lineHeight: '1.4'
-  },
-  modalTextarea: {
-    width: '100%',
-    height: '240px',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '6px',
-    padding: '12px',
-    color: '#38bdf8',
-    fontFamily: "'JetBrains Mono', monospace",
-    fontSize: '0.85rem',
-    outline: 'none',
-    resize: 'vertical',
-    boxSizing: 'border-box'
-  },
-  modalActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '12px',
-    marginTop: '8px'
-  },
-  cancelBtn: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    border: '1px solid var(--border-color)',
-    color: '#94a3b8',
-    borderRadius: '6px',
-    padding: '8px 16px',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-    fontWeight: '600',
-    transition: 'all 0.2s'
-  },
-  submitBtn: {
-    background: 'linear-gradient(135deg, #10b981, #059669)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    padding: '8px 20px',
-    fontSize: '0.85rem',
-    fontWeight: '700',
-    cursor: 'pointer',
-    transition: 'opacity 0.2s'
-  }
-};
+// Styles moved to App.css design system
 
 export default App;

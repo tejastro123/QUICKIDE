@@ -359,7 +359,7 @@ def visualize_circuit(ir: dict, title: str = "Quantum Circuit", theme: str = "da
                 y_top = qy(0)
                 y_bot = qy(n_q - 1)
                 if_edge = "#eab308" if is_dark else "#CCAA00"
-                if_fill = "rgba(234, 179, 8, 0.1)" if is_dark else "#FFFBE6"
+                if_fill = (234/255, 179/255, 8/255, 0.1) if is_dark else "#FFFBE6"
                 if_text = "#fef08a" if is_dark else "#886600"
                 rect = mpatches.FancyBboxPatch(
                     (x - GATE_WIDTH * 1.1, y_bot - GATE_HEIGHT),
@@ -374,7 +374,7 @@ def visualize_circuit(ir: dict, title: str = "Quantum Circuit", theme: str = "da
                 for sub in instr.get("then", []):
                     sub_args = sub.get("args", [])
                     if sub_args and sub_args[0] in qmap:
-                        sub_fill = "rgba(234, 179, 8, 0.2)" if is_dark else "#FFF3CC"
+                        sub_fill = (234/255, 179/255, 8/255, 0.2) if is_dark else "#FFF3CC"
                         _gate_box(ax, x, qy(qmap[sub_args[0]]),
                                   GATE_LABELS.get(sub.get("op", "?"), sub.get("op", "?")),
                                   fill=sub_fill, edge=if_edge)

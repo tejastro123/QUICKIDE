@@ -20,7 +20,7 @@ from backend.cloud_provider import submit_to_ibm, get_job_status_ibm, get_job_re
 
 # Phase 2 Imports
 from backend.bloch import bloch_sphere
-from backend.reverse_transpiler import qasm_to_qucpl
+from backend.reverse_transpiler import qasm_to_qucpl, qiskit_to_qucpl
 from backend.optimizer import optimize_ir
 from backend.algorithms.library import get_library, search_library
 
@@ -59,8 +59,13 @@ def handle_transpile():
 @app.route('/transpile/reverse', methods=['POST'])
 def handle_reverse_transpile():
     try:
-        qasm = request.json['qasm']
-        qucpl_code, warnings = qasm_to_qucpl(qasm)
+        code_input = request.json.get('qiskit') or request.json.get('qasm')
+        if not code_input:
+            return jsonify({"error": "No input code provided"}), 400
+        if "QuantumCircuit" in code_input or "from qiskit" in code_input or "circuit." in code_input:
+            qucpl_code, warnings = qiskit_to_qucpl(code_input)
+        else:
+            qucpl_code, warnings = qasm_to_qucpl(code_input)
         return jsonify({"code": qucpl_code, "warnings": warnings})
     except Exception as e:
         return jsonify({"error": str(e)}), 400

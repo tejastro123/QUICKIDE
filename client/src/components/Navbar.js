@@ -1,11 +1,13 @@
-import React, { useContext } from 'react'; // 1. Import useContext
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import './Navbar.css';
-import { AuthContext } from '../context/AuthContext'; // 2. Import AuthContext
+import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
+import {
+  Cpu, FolderOpen, Cloud, Sun, Moon, LogOut, Zap
+} from 'lucide-react';
 
 function Navbar() {
-  // 3. Get auth state and logout function
   const { isAuthenticated, logout } = useContext(AuthContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
@@ -17,59 +19,109 @@ function Navbar() {
 
   return (
     <nav className="navbar">
+      {/* Brand */}
       <div className="navbar-brand">
-        <Link to="/">QuickIDE</Link>
+        <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Zap size={18} style={{ color: 'var(--quantum-cyan)', flexShrink: 0, filter: 'drop-shadow(0 0 6px var(--quantum-cyan))' }} />
+          QuickIDE
+        </NavLink>
       </div>
-      <div className="navbar-links" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+
+      {/* Center status badge */}
+      <div className="navbar-center">
+        {isAuthenticated && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '7px',
+            background: 'rgba(52, 211, 153, 0.08)',
+            border: '1px solid rgba(52, 211, 153, 0.2)',
+            borderRadius: 'var(--radius-pill)',
+            padding: '4px 12px',
+            fontSize: '0.72rem',
+            fontWeight: '600',
+            color: 'var(--quantum-green)',
+            letterSpacing: '0.04em',
+          }}>
+            <span style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: 'var(--quantum-green)',
+              boxShadow: '0 0 6px var(--quantum-green)',
+              animation: 'pulseGlow 2s ease-in-out infinite'
+            }} />
+            CONNECTED
+          </div>
+        )}
+      </div>
+
+      {/* Nav links */}
+      <div className="navbar-links">
+        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           style={{
-            background: 'none',
-            border: 'none',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
             cursor: 'pointer',
-            fontSize: '1.2rem',
-            padding: '4px',
+            width: '34px',
+            height: '34px',
             display: 'flex',
             alignItems: 'center',
-            color: 'var(--text-primary)',
-            transition: 'transform 0.2s',
+            justifyContent: 'center',
+            color: 'var(--text-secondary)',
+            transition: 'var(--transition-smooth)',
           }}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+            e.currentTarget.style.borderColor = 'var(--border-bright)';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
         >
-          {theme === 'dark' ? '☀️' : '🌙'}
+          {theme === 'dark'
+            ? <Sun size={15} />
+            : <Moon size={15} />
+          }
         </button>
-        {/* 4. Conditionally show links */}
+
         {isAuthenticated ? (
           <>
-            <Link to="/">IDE</Link>
-            <Link to="/resources">Projects & Tutorials</Link>
-            <Link to="/cloud">Cloud</Link>
-            <> </>
-            {/* Replaced invalid anchor with an accessible button styled like a link */}
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="logout-button"
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                margin: 0,
-                cursor: 'pointer',
-                color: 'inherit',
-                font: 'inherit',
-                textDecoration: 'underline' // optional to look like a link
-              }}
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
             >
+              <Cpu size={14} />
+              IDE
+            </NavLink>
+            <NavLink
+              to="/resources"
+              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+            >
+              <FolderOpen size={14} />
+              Projects
+            </NavLink>
+            <NavLink
+              to="/cloud"
+              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+            >
+              <Cloud size={14} />
+              Cloud
+            </NavLink>
+
+            <button onClick={handleLogout} className="logout-button">
+              <LogOut size={13} />
               Logout
             </button>
           </>
         ) : (
           <>
-            <Link to="/login">Login</Link>
-            <Link to="/register">Register</Link>
+            <NavLink to="/login"  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Login</NavLink>
+            <NavLink to="/register" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Register</NavLink>
           </>
         )}
       </div>

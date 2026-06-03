@@ -34,17 +34,16 @@ function OptimizerSuggestions({ ir, onOptimizeAccept, log }) {
     try {
       // 1. Get QASM and Qiskit from optimized IR
       const qasmResponse = await transpileAst(optResult.optimized_ir);
-      const qasm = qasmResponse.data.qasm;
       const qiskit = qasmResponse.data.qiskit;
 
-      // 2. Reverse transpile QASM back to QuCPL code
-      const reverseResponse = await reverseTranspile(qasm);
+      // 2. Reverse transpile Qiskit back to QuCPL code
+      const reverseResponse = await reverseTranspile(qiskit);
       const newCode = reverseResponse.data.code;
 
       // 3. Inform parent to update state (IR, QASM, Qiskit, Code)
       onOptimizeAccept({
         ir: optResult.optimized_ir,
-        qasm: qasm,
+        qasm: qasmResponse.data.qasm,
         qiskit: qiskit,
         code: newCode
       });

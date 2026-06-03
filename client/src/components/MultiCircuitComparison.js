@@ -92,7 +92,7 @@ function MultiCircuitComparison({ codeA, irA, histogramUrlA, backend, log }) {
     try {
       const optRes = await api.optimizeIr(irA);
       const qasmRes = await api.transpileAst(optRes.data.optimized_ir);
-      const revRes = await api.reverseTranspile(qasmRes.data.qasm);
+      const revRes = await api.reverseTranspile(qasmRes.data.qiskit);
       setCodeB(revRes.data.code);
       if (log) log('Optimized version of Circuit A loaded into Slot B.', 'success');
     } catch (err) {
