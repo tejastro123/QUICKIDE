@@ -1,4 +1,4 @@
-?start: stmt+
+?start: stmt*
 
 ?stmt: qubit_decl ";"
      | qop_stmt ";"
@@ -11,15 +11,16 @@
      | reset_stmt ";"
 
 qubit_decl:   "qubit" id_list
-qop_stmt:     "qop" GATE_NAME id_list
-pqop_stmt:    "qop" PGATE_NAME "(" param_list ")" id_list
+qop_stmt:     ["qop"] GATE_NAME id_list
+pqop_stmt:    ["qop"] PGATE_NAME "(" param_list ")" id_list
 measure_stmt: "measure" id_list "->" id_list
 print_stmt:   "print" id_list
 barrier_stmt: "barrier" id_list
 convert_stmt: "convert" INT
 reset_stmt:   "reset" id_list
 
-if_stmt: "if" "(" condition ")" "{" stmt+ "}" ("else" "{" stmt+ "}")?
+if_stmt: "if" "(" condition ")" "{" block "}" ("else" "{" block "}")?
+block: stmt+
 
 condition: CNAME "==" INT
 
@@ -39,5 +40,7 @@ PGATE_NAME: "rx" | "ry" | "rz" | "p" | "u"
 %import common.NUMBER
 %import common.WS
 %import common.SH_COMMENT
+%import common.CPP_COMMENT
 %ignore WS
 %ignore SH_COMMENT
+%ignore CPP_COMMENT

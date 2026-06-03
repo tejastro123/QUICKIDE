@@ -1,8 +1,9 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 const JWT_SECRET = process.env.JWT_SECRET; // Loaded from .env — must match routes/auth.js
 
-module.exports = function (req, res, next) {
+const auth = function (req, res, next) {
   // Get token from header
   const token = req.header('Authorization');
 
@@ -26,3 +27,38 @@ module.exports = function (req, res, next) {
     res.status(401).json({ error: 'Token is not valid' });
   }
 };
+
+/**
+ * Middleware to restrict access to specific roles (e.g. requireRole('admin'))
+ * @param {string|string[]} allowedRoles 
+ */
+auth.requireRole = function (allowedRoles) {
+  if (typeof allowedRoles === 'string') {
+    allowedRoles = [allowedRoles];
+  }
+
+  return async (req, res, next) => {
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ error: 'No user token found, authorization denied' });
+      }
+
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      if (!allowedRoles.includes(user.role)) {
+        return res.status(403).json({ error: 'Access forbidden: Insufficient permissions' });
+      }
+
+      // Attach complete user model to the request object
+      req.userModel = user;
+      next();
+    } catch (err) {
+      res.status(500).json({ error: 'Server error during role verification' });
+    }
+  };
+};
+
+module.exports = auth;

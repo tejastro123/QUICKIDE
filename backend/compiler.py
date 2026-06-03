@@ -28,19 +28,21 @@ def compile_stmt(stmt):
         return ("qubits", flatten(stmt["qubits"]))
 
     elif stype == "QuantumOp":
-        return {
-            "op":     stmt["gate"],
-            "args":   flatten(stmt["qubits"]),
-            "params": stmt.get("params", []),
+        op = {
+            "op":   stmt["gate"],
+            "args": flatten(stmt["qubits"]),
         }
+        if stmt.get("params"):
+            op["params"] = stmt["params"]
+        return op
 
     elif stype == "Barrier":
         return {"op": "barrier", "args": flatten(stmt["qubits"])}
 
     elif stype == "Measure":
         return {
-            "op":       "measure",
-            "qubits":   flatten(stmt["qubits"]),
+            "op":        "measure",
+            "qubits":    flatten(stmt["qubits"]),
             "classical": flatten(stmt["classical"]),
         }
 
@@ -58,9 +60,14 @@ def compile_stmt(stmt):
         else_block = stmt.get("else") or []
         then_stmts = then_block if isinstance(then_block, list) else [then_block]
         else_stmts = else_block if isinstance(else_block, list) else ([else_block] if else_block else [])
+        
+        cond = stmt["condition"]
+        if isinstance(cond, dict) and "type" in cond:
+            cond = {k: v for k, v in cond.items() if k != "type"}
+
         return {
             "type":      "if",
-            "condition": stmt["condition"],
+            "condition": cond,
             "then":      [compile_stmt(s) for s in then_stmts],
             "else":      [compile_stmt(s) for s in else_stmts],
         }
@@ -69,9 +76,43 @@ def compile_stmt(stmt):
         raise ValueError(f"Unknown statement type: {stype}")
 
 
+def validate_ast(ast: dict):
+    declared = set()
+
+    def walk(node):
+        if not isinstance(node, dict):
+            return
+        ntype = node.get("type")
+        if ntype == "Program":
+            for stmt in node.get("body", []):
+                walk(stmt)
+        elif ntype == "QubitDecl":
+            for q in flatten(node.get("qubits", [])):
+                if q in declared:
+                    raise ValueError(f"Qubit '{q}' already declared")
+                declared.add(q)
+        elif ntype in ("QuantumOp", "Barrier", "Measure", "Reset"):
+            for q in flatten(node.get("qubits", [])):
+                if q not in declared:
+                    raise ValueError(f"Qubit '{q}' is not declared")
+        elif ntype == "If":
+            then_block = node.get("then", [])
+            else_block = node.get("else") or []
+            then_stmts = then_block if isinstance(then_block, list) else [then_block]
+            else_stmts = else_block if isinstance(else_block, list) else ([else_block] if else_block else [])
+            for s in then_stmts:
+                walk(s)
+            for s in else_stmts:
+                walk(s)
+
+    walk(ast)
+
+
 def ast_to_ir(ast: dict) -> dict:
     if ast.get("type") != "Program":
         ast = {"type": "Program", "body": [ast]}
+
+    validate_ast(ast)
 
     ir = {"type": "Program", "qubits": [], "instructions": []}
 

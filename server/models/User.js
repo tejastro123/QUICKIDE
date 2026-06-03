@@ -15,6 +15,16 @@ const UserSchema = new mongoose.Schema({
     ibmToken: {
         type: String,
         default: ''
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    tier: {
+        type: String,
+        enum: ['free', 'pro', 'admin'],
+        default: 'free'
     }
 }, { timestamps: true });
 

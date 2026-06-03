@@ -20,7 +20,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      login(response.data.token);
+      login(response.data.token, response.data.refreshToken);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');

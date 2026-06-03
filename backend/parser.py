@@ -36,6 +36,18 @@ _grammar = _load_grammar()
 _parser = Lark(_grammar, parser='lalr', start='start')
 
 
+def _flatten(lst):
+    if isinstance(lst, list):
+        result = []
+        for item in lst:
+            if isinstance(item, list):
+                result.extend(_flatten(item))
+            else:
+                result.append(item)
+        return result
+    return [lst]
+
+
 # ---------------------------------------------------------------------------
 # AST builder transformer
 # ---------------------------------------------------------------------------
@@ -49,12 +61,12 @@ class ASTBuilder(Transformer):
     # --- Declarations ---
 
     def qubit_decl(self, *ids):
-        return {"type": "QubitDecl", "qubits": list(ids)}
+        return {"type": "QubitDecl", "qubits": _flatten(list(ids))}
 
     # --- Non-parameterized gate ---
 
     def qop_stmt(self, gate, args):
-        return {"type": "QuantumOp", "gate": str(gate), "qubits": args, "params": []}
+        return {"type": "QuantumOp", "gate": str(gate), "qubits": _flatten(args), "params": []}
 
     # --- Parameterized gate (new in Phase 2) ---
 
@@ -62,25 +74,28 @@ class ASTBuilder(Transformer):
         return {
             "type": "QuantumOp",
             "gate": str(gate),
-            "qubits": args,
+            "qubits": _flatten(args),
             "params": params,
         }
 
     # --- Other statements ---
 
     def barrier_stmt(self, args):
-        return {"type": "Barrier", "qubits": args}
+        return {"type": "Barrier", "qubits": _flatten(args)}
 
     def measure_stmt(self, *args):
         mid = len(args) // 2
         return {
             "type": "Measure",
-            "qubits": list(args[:mid]),
-            "classical": list(args[mid:]),
+            "qubits": _flatten(list(args[:mid])),
+            "classical": _flatten(list(args[mid:])),
         }
 
     def print_stmt(self, *args):
-        return {"type": "Print", "args": list(args)}
+        return {"type": "Print", "args": _flatten(list(args))}
+
+    def block(self, *stmts):
+        return list(stmts)
 
     def if_stmt(self, cond, *blocks):
         if_block  = blocks[0]
@@ -96,7 +111,7 @@ class ASTBuilder(Transformer):
         return {"type": "Convert", "value": int(val)}
 
     def reset_stmt(self, args):
-        return {"type": "Reset", "qubits": args}
+        return {"type": "Reset", "qubits": _flatten(args)}
 
     # --- Helpers ---
 

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 function Navbar() {
-  const { isAuthenticated, logout } = useContext(AuthContext);
+  const { isAuthenticated, logout, quota } = useContext(AuthContext);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
 
@@ -27,8 +27,8 @@ function Navbar() {
         </NavLink>
       </div>
 
-      {/* Center status badge */}
-      <div className="navbar-center">
+      {/* Center status badge and quota indicator */}
+      <div className="navbar-center" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {isAuthenticated && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '7px',
@@ -48,6 +48,40 @@ function Navbar() {
               animation: 'pulseGlow 2s ease-in-out infinite'
             }} />
             CONNECTED
+          </div>
+        )}
+
+        {isAuthenticated && quota && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-pill)',
+            padding: '4px 12px',
+            fontSize: '0.72rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)'
+          }}>
+            <span style={{
+              textTransform: 'uppercase',
+              color: quota.tier === 'free' ? 'var(--text-secondary)' : 'var(--quantum-cyan)',
+              fontWeight: '700',
+              fontSize: '0.68rem',
+              background: quota.tier === 'free' ? 'rgba(255,255,255,0.06)' : 'rgba(59, 130, 246, 0.1)',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              border: quota.tier === 'free' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(59, 130, 246, 0.2)'
+            }}>
+              {quota.tier}
+            </span>
+            <span style={{ borderLeft: '1px solid var(--border-color)', height: '10px' }} />
+            <span>
+              Sims: {quota.limits.simulate === Infinity ? '∞' : `${quota.usage.simulate}/${quota.limits.simulate}`}
+            </span>
+            <span style={{ borderLeft: '1px solid var(--border-color)', height: '10px' }} />
+            <span>
+              Compiles: {quota.limits.compile === Infinity ? '∞' : `${quota.usage.compile}/${quota.limits.compile}`}
+            </span>
           </div>
         )}
       </div>

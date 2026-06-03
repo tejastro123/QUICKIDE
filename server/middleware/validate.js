@@ -39,7 +39,7 @@ const validate = (checks) => [
  * Validation rule sets for each route group.
  */
 const rules = {
-  // POST /run/parse  — requires a non-empty string
+  // POST /run/parse  — requires a non-empty string, max 500KB
   parse: [
     body('code')
       .exists({ checkNull: true })
@@ -47,7 +47,9 @@ const rules = {
       .isString()
       .withMessage('code must be a string')
       .notEmpty()
-      .withMessage('code must not be empty'),
+      .withMessage('code must not be empty')
+      .isLength({ max: 512000 })
+      .withMessage('Circuit code must be 500 KB or smaller'),
   ],
 
   // POST /run/compile  — requires an object with type "Program"
@@ -92,7 +94,9 @@ const rules = {
       .exists({ checkNull: true })
       .withMessage('code is required')
       .isString()
-      .withMessage('code must be a string'),
+      .withMessage('code must be a string')
+      .isLength({ max: 512000 })
+      .withMessage('Circuit code must be 500 KB or smaller'),
     body('name')
       .optional()
       .isString()
@@ -105,15 +109,18 @@ const rules = {
   // PUT /projects/:id
   renameProject: [
     body('name')
-      .exists({ checkNull: true })
-      .withMessage('name is required')
+      .optional()
       .isString()
       .withMessage('name must be a string')
-      .notEmpty()
-      .withMessage('name must not be empty')
       .isLength({ max: 200 })
       .withMessage('name must be at most 200 characters')
       .trim(),
+    body('code')
+      .optional()
+      .isString()
+      .withMessage('code must be a string')
+      .isLength({ max: 512000 })
+      .withMessage('Circuit code must be 500 KB or smaller'),
   ],
 
   // POST /user/token

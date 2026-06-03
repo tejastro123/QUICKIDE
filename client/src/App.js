@@ -37,6 +37,8 @@ function App() {
   const [isDebugMode, setIsDebugMode] = useState(false);
   const [debugStep, setDebugStep] = useState(-1);
   const [debugData, setDebugData] = useState(null);
+  const [debugSessionId, setDebugSessionId] = useState(null);
+  const eventSourceRef = useRef(null);
 
   // --- Phase 2 State ---
   const [isImportQiskitOpen, setIsImportQiskitOpen] = useState(false);
@@ -56,12 +58,14 @@ function App() {
   const [saveProjectName, setSaveProjectName] = useState('My Project');
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [cloudBackendName, setCloudBackendName] = useState('ibm_osaka');
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [quotaExceededDetails, setQuotaExceededDetails] = useState(null);
 
   // --- Ref for File Input ---
   const fileInputRef = useRef(null);
 
   // --- Auth Context & Navigation ---
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, fetchQuota } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,6 +79,17 @@ function App() {
     document.body.classList.toggle('landing-open', isLanding);
     return () => document.body.classList.remove('landing-open');
   }, [location.pathname, isAuthenticated]);
+
+  useEffect(() => {
+    const handleQuotaExceeded = (e) => {
+      setQuotaExceededDetails(e.detail);
+      setIsUpgradeModalOpen(true);
+    };
+    window.addEventListener('quota-exceeded', handleQuotaExceeded);
+    return () => {
+      window.removeEventListener('quota-exceeded', handleQuotaExceeded);
+    };
+  }, []);
 
   useEffect(() => {
     if (shareId) {
@@ -157,6 +172,7 @@ function App() {
       setIr(response.data.ir);
       log('IR compiled successfully.', 'success');
       handleTranspile(response.data.ir);
+      fetchQuota?.();
       return response.data.ir;
     } catch (err) {
       log(`Compilation Error: ${err.response?.data?.error || err.message}`, 'error');
@@ -224,6 +240,7 @@ function App() {
       const imageUrl = URL.createObjectURL(response.data);
       setHistogramUrl(imageUrl);
       log(`Simulation complete on ${backend}.`, 'success');
+      fetchQuota?.();
     } catch (err) {
       log(`Simulation Error: ${err.response?.data?.error || err.message}`, 'error');
     } finally {
@@ -264,6 +281,43 @@ function App() {
 
   // --- Debugger Logic ---
 
+  useEffect(() => {
+    if (!debugSessionId) {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      return;
+    }
+
+    const es = new EventSource(`http://localhost:5000/api/debug/stream?sessionId=${debugSessionId}`);
+    eventSourceRef.current = es;
+
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.status === 'connected') {
+          console.log('[SSE] Debugger SSE connected:', data);
+        } else {
+          setDebugData(data);
+          if (data.circuit_img) {
+            setCircuitUrl(data.circuit_img);
+          }
+        }
+      } catch (err) {
+        console.error('Error parsing debugger SSE data:', err);
+      }
+    };
+
+    es.onerror = (err) => {
+      console.error('[SSE Error] Debugger EventSource error:', err);
+    };
+
+    return () => {
+      es.close();
+    };
+  }, [debugSessionId]);
+
   const toggleDebugMode = async () => {
     if (!isDebugMode) {
       let currentIr = ir;
@@ -271,23 +325,30 @@ function App() {
         currentIr = await handleCompile();
         if (!currentIr) return;
       }
+      
+      const newSessionId = Math.random().toString(36).substring(2, 11);
+      setDebugSessionId(newSessionId);
+      
       setIsDebugMode(true);
       setDebugStep(-1);
-      fetchDebugStep(currentIr, -1);
+      fetchDebugStep(currentIr, -1, newSessionId);
       log('Debugger started. Inspecting initial state.', 'info');
     } else {
       setIsDebugMode(false);
+      setDebugSessionId(null);
       setDebugData(null);
       log('Debugger stopped.', 'info');
     }
   };
 
-  const fetchDebugStep = async (currentIr, index) => {
+  const fetchDebugStep = async (currentIr, index, sessionId = debugSessionId) => {
     setIsDebugging(true);
     try {
-      const response = await api.getDebugStep(currentIr, index);
-      setDebugData(response.data);
-      setCircuitUrl(response.data.circuit_img);
+      const response = await api.getDebugStep(currentIr, index, sessionId);
+      if (!sessionId) {
+        setDebugData(response.data);
+        setCircuitUrl(response.data.circuit_img);
+      }
     } catch (err) {
       log(`Debug Error: ${err.response?.data?.error || err.message}`, 'error');
     } finally {
@@ -607,6 +668,43 @@ function App() {
             onKeyDown={(e) => { if (e.key === 'Enter') submitCloudJob(); }}
             autoFocus
           />
+        </div>
+      </Modal>
+
+      {/* Upgrade Quota Plan Modal */}
+      <Modal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        title="Upgrade Your Plan 🚀"
+        actions={
+          <>
+            <button className="modal-btn-secondary" onClick={() => setIsUpgradeModalOpen(false)}>Maybe Later</button>
+            <button className="modal-btn-primary" onClick={() => {
+              log('Redirecting to upgrade subscription...', 'info');
+              setIsUpgradeModalOpen(false);
+            }}>Upgrade to Pro</button>
+          </>
+        }
+      >
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.5' }}>
+          {quotaExceededDetails?.error || "You've reached your daily quota limit."}
+        </p>
+        <div style={{
+          background: 'rgba(59, 130, 246, 0.08)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+          borderRadius: 'var(--radius-md)',
+          padding: '12px',
+          fontSize: '0.82rem',
+          color: 'var(--text-primary)',
+          lineHeight: '1.6'
+        }}>
+          <strong>Pro Tier Features:</strong>
+          <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
+            <li>Up to 25 Qubits support</li>
+            <li>100 Simulations per day</li>
+            <li>Unlimited Compilations</li>
+            <li>Priority Simulation Queue</li>
+          </ul>
         </div>
       </Modal>
     </div>

@@ -270,6 +270,46 @@ class StatevectorSimulator:
 # IR executor
 # ---------------------------------------------------------------------------
 
+def _execute_instruction(instr: dict, sim: StatevectorSimulator,
+                         qmap: Dict[str, int], cmap: Dict[str, int],
+                         classical_state: Dict[str, int]) -> None:
+    """Execute a single IR instruction on the simulator."""
+    op = instr.get("op", "")
+
+    if op == "measure":
+        bits = sim.measure_once(list(qmap.values()))
+        for q_name, c_name in zip(instr["qubits"], instr["classical"]):
+            classical_state[c_name] = bits.get(qmap[q_name], 0)
+
+    elif instr.get("type") == "if":
+        cond = instr["condition"]
+        var, expected = cond["var"], cond["value"]
+        if classical_state.get(var, 0) == expected:
+            for sub in instr.get("then", []):
+                _execute_instruction(sub, sim, qmap, cmap, classical_state)
+        else:
+            for sub in instr.get("else", []):
+                _execute_instruction(sub, sim, qmap, cmap, classical_state)
+
+    elif op == "convert":
+        val = instr.get("value", 0)
+        binary_str = bin(val)[2:]
+        for i, bit in enumerate(reversed(binary_str)):
+            if i < sim.n and bit == "1":
+                sim.apply_gate("x", [i])
+
+    elif op in ("print", "barrier"):
+        if op == "print":
+            print(f"[PRINT] {', '.join(instr.get('args', []))}")
+
+    elif op:
+        args = instr.get("args", [])
+        params = instr.get("params", [])
+        targets = [qmap[a] for a in args if a in qmap]
+        if targets:
+            sim.apply_gate(op, targets, params)
+
+
 def _execute_ir(ir: dict, sim: StatevectorSimulator,
                 qmap: Dict[str, int], cmap: Dict[str, int],
                 classical_state: Dict[str, int],
@@ -282,42 +322,7 @@ def _execute_ir(ir: dict, sim: StatevectorSimulator,
         instructions = ir.get("instructions", [])
 
     for instr in instructions:
-        op = instr.get("op", "")
-
-        if op == "measure":
-            bits = sim.measure_once(list(qmap.values()))
-            for q_name, c_name in zip(instr["qubits"], instr["classical"]):
-                classical_state[c_name] = bits.get(qmap[q_name], 0)
-
-        elif instr.get("type") == "if":
-            cond = instr["condition"]
-            var, expected = cond["var"], cond["value"]
-            if classical_state.get(var, 0) == expected:
-                _execute_ir(ir, sim, qmap, cmap, classical_state,
-                            instructions=instr.get("then", []))
-            else:
-                _execute_ir(ir, sim, qmap, cmap, classical_state,
-                            instructions=instr.get("else", []))
-
-        elif op == "convert":
-            # QuCPL `convert N` — initialise qubits to the binary rep of N
-            val = instr.get("value", 0)
-            binary_str = bin(val)[2:]
-            print(f"[CONVERT] Decimal {val} → Binary {binary_str}")
-            for i, bit in enumerate(reversed(binary_str)):
-                if i < sim.n and bit == "1":
-                    sim.apply_gate("x", [i])
-
-        elif op in ("print", "barrier"):
-            if op == "print":
-                print(f"[PRINT] {', '.join(instr.get('args', []))}")
-
-        elif op:
-            args = instr.get("args", [])
-            params = instr.get("params", [])
-            targets = [qmap[a] for a in args if a in qmap]
-            if targets:
-                sim.apply_gate(op, targets, params)
+        _execute_instruction(instr, sim, qmap, cmap, classical_state)
 
 
 def _build_maps(ir: dict):
@@ -719,14 +724,19 @@ def simulate(ir: dict, title: str = "Quantum Simulation",
         return buf.getvalue()
 
 
-# ---------------------------------------------------------------------------
-# get_debug_step()  — public entry point for the debugger
-# ---------------------------------------------------------------------------
+# Global debug cache to optimize step-by-step debugger performance to O(1)
+_DEBUG_CACHE: Dict[str, any] = {
+    "circuit_hash": None,
+    "snapshots": {}  # step_index -> (statevector_array, classical_state_dict)
+}
+
 
 def get_debug_step(ir: dict, step_index: int, theme: str = "dark") -> dict:
     """
     Compute the statevector after applying instructions[0 .. step_index]
     and generate a partial circuit visualisation.
+
+    Uses an in-memory intermediate snapshot cache to achieve O(1) stepping times.
 
     Returns
     -------
@@ -737,22 +747,55 @@ def get_debug_step(ir: dict, step_index: int, theme: str = "dark") -> dict:
         "current_gate": str,
     }
     """
+    import hashlib
+    global _DEBUG_CACHE
+
     qubits = ir.get("qubits", [])
     instructions = ir.get("instructions", [])
     n = len(qubits)
 
-    partial_instructions = instructions[:step_index + 1]
-    partial_ir = {"qubits": qubits, "instructions": partial_instructions,
-                  "type": "Program"}
+    # 1. Compute circuit hash
+    serialized = json.dumps((qubits, instructions), sort_keys=True)
+    circuit_hash = hashlib.md5(serialized.encode('utf-8')).hexdigest()
 
-    qmap, cmap = _build_maps(partial_ir)
+    # Clear cache if starting a new or modified circuit
+    if _DEBUG_CACHE["circuit_hash"] != circuit_hash:
+        _DEBUG_CACHE["circuit_hash"] = circuit_hash
+        _DEBUG_CACHE["snapshots"] = {}
+
+    qmap, cmap = _build_maps(ir)
+
+    # 2. Find highest cached index <= step_index
+    cached_idx = -1
+    for idx in sorted(_DEBUG_CACHE["snapshots"].keys()):
+        if idx <= step_index:
+            cached_idx = idx
+        else:
+            break
+
     sim = StatevectorSimulator(n) if n > 0 else None
+    classical_state = {}
 
     if sim:
-        classical_state: Dict[str, int] = {}
-        _execute_ir(partial_ir, sim, qmap, cmap, classical_state)
+        if cached_idx != -1:
+            state_vec, cl_state = _DEBUG_CACHE["snapshots"][cached_idx]
+            sim.state = state_vec.copy()
+            classical_state = cl_state.copy()
+        else:
+            # Cache initial state at index -1
+            _DEBUG_CACHE["snapshots"][-1] = (sim.state.copy(), classical_state.copy())
 
-    # Circuit image via our own visualiser (no Qiskit)
+        # 3. Simulate incrementally from cached_idx + 1 up to step_index
+        for idx in range(cached_idx + 1, step_index + 1):
+            if idx < len(instructions):
+                _execute_instruction(instructions[idx], sim, qmap, cmap, classical_state)
+                # Cache the new state
+                _DEBUG_CACHE["snapshots"][idx] = (sim.state.copy(), classical_state.copy())
+
+    # Generate partial circuit visualization
+    partial_instructions = instructions[:step_index + 1]
+    partial_ir = {"qubits": qubits, "instructions": partial_instructions, "type": "Program"}
+
     try:
         from backend.visualize import visualize_circuit
         circuit_img = visualize_circuit(partial_ir,

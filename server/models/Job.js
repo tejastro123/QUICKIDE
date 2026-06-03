@@ -28,4 +28,8 @@ const JobSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Performance optimization indexes
+JobSchema.index({ user: 1, createdAt: -1 });
+JobSchema.index({ user: 1, status: 1 });
+
 module.exports = mongoose.model('Job', JobSchema);
