@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -13,8 +14,8 @@ app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json());
 
 // --- Database Connection ---
-// Make sure you have MongoDB running locally or use a cloud URI
-const MONGO_URI = 'mongodb://localhost:27017/quickide'; 
+// MONGO_URI is loaded from .env — never hardcode connection strings
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/quickide';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB connected successfully.'))
   .catch(err => console.error('MongoDB connection error:', err));

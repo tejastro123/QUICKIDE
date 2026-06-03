@@ -1,23 +1,35 @@
-# Core GUI + Utilities
-tkhtmlview
-markdown
+# ============================================================
+# QuickIDE Python dependencies
+# ============================================================
 
-# Quantum SDK
+# --- Core numeric / simulation engine (replaces Qiskit-Aer) ---
+numpy
+scipy           # optional: used for future advanced linear algebra
+matplotlib      # circuit visualiser + histogram renderer
+
+# --- Parsing ---
+lark            # QuCPL grammar parser
+
+# --- Web API ---
+flask
+flask-cors
+
+# --- IBM Quantum Hardware (optional — only for cloud submit) ---
+# These are only imported lazily in backend/cloud_provider.py
+# when the user explicitly submits a job to real IBM hardware.
+# Comment them out if you don't need cloud execution.
 qiskit
-qiskit-aer
 qiskit-ibm-runtime
 
-# Plotting & Visualization
-matplotlib
-
-# Syntax Highlighting (optional enhancements)
+# --- Utilities ---
+# argparse is stdlib in Python 3.2+ — no install needed
+# pygments kept for potential syntax highlighting use
 pygments
 
-# Parsing
-lark
-
-# CLI/Debugging Helpers (optional)
-argparse
-
-# Only needed for building standalone GUI apps (e.g. via PyInstaller)
-pyinstaller
+# ============================================================
+# Removed from this file:
+#   qiskit-aer  (local simulation now uses pure NumPy)
+#   tkhtmlview  (dead code — GUI not used in web context)
+#   markdown    (not currently used)
+#   pyinstaller (build tool, not a runtime dependency)
+# ============================================================

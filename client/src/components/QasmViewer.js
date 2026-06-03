@@ -6,7 +6,7 @@ function QasmViewer({ qasm, placeholder }) {
   if (!qasm) {
     return (
       <div className="panel-content scrollable" style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-        {placeholder || "Compile to see OpenQASM 3.0 code."}
+        {placeholder || "Compile to see Qiskit Python code."}
       </div>
     );
   }
@@ -14,7 +14,7 @@ function QasmViewer({ qasm, placeholder }) {
   return (
     <div className="panel-content" style={{ backgroundColor: '#1e1e1e', height: '100%' }}>
       <SyntaxHighlighter
-        language="cpp" // QASM is similar to C-style syntax highlighter
+        language="python"
         style={shadesOfPurple}
         customStyle={{
           margin: 0,

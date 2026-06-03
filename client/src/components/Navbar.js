@@ -2,10 +2,12 @@ import React, { useContext } from 'react'; // 1. Import useContext
 import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 import { AuthContext } from '../context/AuthContext'; // 2. Import AuthContext
+import { ThemeContext } from '../context/ThemeContext';
 
 function Navbar() {
   // 3. Get auth state and logout function
   const { isAuthenticated, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -18,7 +20,26 @@ function Navbar() {
       <div className="navbar-brand">
         <Link to="/">QuickIDE</Link>
       </div>
-      <div className="navbar-links">
+      <div className="navbar-links" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <button
+          onClick={toggleTheme}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1.2rem',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            color: 'var(--text-primary)',
+            transition: 'transform 0.2s',
+          }}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
         {/* 4. Conditionally show links */}
         {isAuthenticated ? (
           <>

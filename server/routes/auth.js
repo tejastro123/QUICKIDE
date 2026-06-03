@@ -1,15 +1,17 @@
+require('dotenv').config();
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { validate, rules } = require('../middleware/validate');
 
 const router = express.Router();
 
-// Secret key for JWT (store this in a .env file in a real app)
-const JWT_SECRET = 'your-super-secret-key-123';
+// Secret key loaded from .env — never hardcode this
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // --- POST /api/auth/register ---
-router.post('/register', async (req, res) => {
+router.post('/register', validate(rules.authCredentials), async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -35,7 +37,7 @@ router.post('/register', async (req, res) => {
 });
 
 // --- POST /api/auth/login ---
-router.post('/login', async (req, res) => {
+router.post('/login', validate(rules.authCredentials), async (req, res) => {
   try {
     const { email, password } = req.body;
 

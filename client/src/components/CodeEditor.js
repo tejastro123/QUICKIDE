@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Editor, loader } from '@monaco-editor/react';
+import { ThemeContext } from '../context/ThemeContext';
 
 // Define QuCPL language configuration
 const qucplLanguage = {
   defaultToken: '',
   tokenPostfix: '.qucpl',
   keywords: [
-    'qubit', 'qop', 'measure', 'print', 'barrier', 'if', 'else', 'convert'
+    'qubit', 'qop', 'measure', 'print', 'barrier', 'if', 'else', 'convert', 'reset'
   ],
   gates: [
-    'h', 'x', 'y', 'z', 'cx', 'cy', 'cz', 'ccx', 'swap'
+    'h', 'x', 'y', 'z', 'cx', 'cy', 'cz', 'ccx', 'swap', 's', 't', 'sdg', 'tdg', 'id', 'rx', 'ry', 'rz', 'p', 'u'
   ],
   operators: [
     '=', '==', '->', ',', ';'
@@ -33,7 +34,7 @@ const qucplLanguage = {
           '@default': ''
         }
       }],
-      [/\d+/, 'number'],
+      [/\d+([.]\d+)?/, 'number'],
       [/[;,.]/, 'delimiter'],
       [/"([^"\\]|\\.)*$/, 'string.invalid'],
       [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
@@ -46,6 +47,7 @@ const qucplLanguage = {
     whitespace: [
       [/[ \t\r\n]+/, 'white'],
       [/\/\/.*$/, 'comment'],
+      [/#.*$/, 'comment'],
     ],
   },
 };
@@ -66,12 +68,24 @@ const handleEditorWillMount = (monaco) => {
           kind: monaco.languages.CompletionItemKind.Keyword,
           insertText: k,
         })),
-        ...qucplLanguage.gates.map(g => ({
-          label: g,
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: g,
-          detail: `Quantum Gate: ${g.toUpperCase()}`
-        })),
+        ...qucplLanguage.gates.map(g => {
+          let insertText = g;
+          let detail = `Quantum Gate: ${g.toUpperCase()}`;
+          if (['rx', 'ry', 'rz', 'p'].includes(g)) {
+            insertText = `${g}(\${1:0.5})`;
+            detail = `Parametric Gate: ${g.toUpperCase()}(θ)`;
+          } else if (g === 'u') {
+            insertText = `u(\${1:0.0}, \${2:0.0}, \${3:0.0})`;
+            detail = `General Unitary Gate: U(θ, φ, λ)`;
+          }
+          return {
+            label: g,
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText,
+            insertTextRules: insertText.includes('$') ? monaco.languages.CompletionItemInsertRule.InsertAsSnippet : undefined,
+            detail
+          };
+        }),
         {
           label: 'bell_state',
           kind: monaco.languages.CompletionItemKind.Snippet,
@@ -86,12 +100,14 @@ const handleEditorWillMount = (monaco) => {
 };
 
 function CodeEditor({ code, setCode }) {
+  const { theme } = useContext(ThemeContext);
+
   return (
     <div className="panel-content">
       <Editor
         height="100%"
         defaultLanguage="qucpl"
-        theme="vs-dark"
+        theme={theme === 'dark' ? 'vs-dark' : 'vs'}
         value={code}
         beforeMount={handleEditorWillMount}
         onChange={(value) => setCode(value || '')}

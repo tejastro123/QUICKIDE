@@ -1,4 +1,13 @@
+"""
+backend/compiler.py  —  AST → IR
+==================================
+Extended in Phase 2 to:
+  - Forward params list from QuantumOp nodes into IR instructions
+  - Compile Reset nodes
+"""
+
 import json
+
 
 def flatten(lst):
     if isinstance(lst, list):
@@ -11,35 +20,56 @@ def flatten(lst):
         return result
     return [lst]
 
+
 def compile_stmt(stmt):
     stype = stmt["type"]
+
     if stype == "QubitDecl":
         return ("qubits", flatten(stmt["qubits"]))
+
     elif stype == "QuantumOp":
-        return {"op": stmt["gate"], "args": flatten(stmt["qubits"])}
+        return {
+            "op":     stmt["gate"],
+            "args":   flatten(stmt["qubits"]),
+            "params": stmt.get("params", []),
+        }
+
     elif stype == "Barrier":
         return {"op": "barrier", "args": flatten(stmt["qubits"])}
+
     elif stype == "Measure":
-        return {"op": "measure", "qubits": flatten(stmt["qubits"]), "classical": flatten(stmt["classical"])}
+        return {
+            "op":       "measure",
+            "qubits":   flatten(stmt["qubits"]),
+            "classical": flatten(stmt["classical"]),
+        }
+
     elif stype == "Print":
         return {"op": "print", "args": flatten(stmt["args"])}
+
     elif stype == "Convert":
         return {"op": "convert", "value": stmt["value"]}
+
+    elif stype == "Reset":
+        return {"op": "reset", "args": flatten(stmt["qubits"])}
+
     elif stype == "If":
         then_block = stmt["then"]
-        else_block = stmt.get("else", [])
+        else_block = stmt.get("else") or []
         then_stmts = then_block if isinstance(then_block, list) else [then_block]
         else_stmts = else_block if isinstance(else_block, list) else ([else_block] if else_block else [])
         return {
-            "type": "if",
+            "type":      "if",
             "condition": stmt["condition"],
-            "then": [compile_stmt(s) for s in then_stmts],
-            "else": [compile_stmt(s) for s in else_stmts]
+            "then":      [compile_stmt(s) for s in then_stmts],
+            "else":      [compile_stmt(s) for s in else_stmts],
         }
+
     else:
         raise ValueError(f"Unknown statement type: {stype}")
 
-def ast_to_ir(ast):
+
+def ast_to_ir(ast: dict) -> dict:
     if ast.get("type") != "Program":
         ast = {"type": "Program", "body": [ast]}
 
@@ -54,6 +84,7 @@ def ast_to_ir(ast):
 
     return ir
 
+
 def compile_ast_file(ast_path, ir_path):
     with open(ast_path) as f:
         ast = json.load(f)
@@ -62,10 +93,11 @@ def compile_ast_file(ast_path, ir_path):
         json.dump(ir, f, indent=2)
     print(f"IR saved to {ir_path}")
 
+
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Compile AST to IR")
-    parser.add_argument("ast_file", help="Path to AST JSON file")
-    parser.add_argument("output_file", help="Output IR JSON file")
-    args = parser.parse_args()
-    compile_ast_file(args.ast_file, args.output_file)
+    _ap = argparse.ArgumentParser(description="Compile AST to IR")
+    _ap.add_argument("ast_file")
+    _ap.add_argument("output_file")
+    _args = _ap.parse_args()
+    compile_ast_file(_args.ast_file, _args.output_file)

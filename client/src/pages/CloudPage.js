@@ -6,6 +6,7 @@ function CloudPage({ log }) {
   const [jobs, setJobs] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(false);
 
   const fetchToken = useCallback(async () => {
     try {
@@ -17,11 +18,14 @@ function CloudPage({ log }) {
   }, [log]);
 
   const fetchJobs = useCallback(async () => {
+    setIsLoadingJobs(true);
     try {
       const response = await api.getCloudJobs();
       setJobs(response.data);
     } catch (err) {
       log('Error fetching cloud jobs', 'error');
+    } finally {
+      setIsLoadingJobs(false);
     }
   }, [log]);
 
@@ -90,7 +94,34 @@ function CloudPage({ log }) {
           </button>
         </div>
         
-        {jobs.length === 0 ? (
+        {isLoadingJobs ? (
+          <div className="table-container">
+            <table className="statevector-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Job ID</th>
+                  <th>Backend</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3].map(i => (
+                  <tr key={i} className="animate-pulse">
+                    <td><div className="skeleton-line" style={{ height: '16px', width: '120px', borderRadius: '4px', background: 'var(--border-color)' }}></div></td>
+                    <td><div className="skeleton-line" style={{ height: '16px', width: '180px', borderRadius: '4px', background: 'var(--border-color)' }}></div></td>
+                    <td><div className="skeleton-line" style={{ height: '16px', width: '80px', borderRadius: '4px', background: 'var(--border-color)' }}></div></td>
+                    <td><div className="skeleton-line" style={{ height: '16px', width: '60px', borderRadius: '4px', background: 'var(--border-color)' }}></div></td>
+                    <td><div className="skeleton-line" style={{ height: '16px', width: '100px', borderRadius: '4px', background: 'var(--border-color)' }}></div></td>
+                    <td><div className="skeleton-line" style={{ height: '16px', width: '40px', borderRadius: '4px', background: 'var(--border-color)' }}></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : jobs.length === 0 ? (
           <p className="empty-msg">No hardware jobs submitted yet.</p>
         ) : (
           <div className="table-container">

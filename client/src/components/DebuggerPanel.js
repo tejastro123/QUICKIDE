@@ -15,7 +15,7 @@ function DebuggerPanel({ debugData, stepIndex, totalSteps }) {
     );
   }
 
-  const { statevector, num_qubits, current_gate } = debugData;
+  const { statevector, num_qubits, current_gate, bloch_img } = debugData;
 
   // Helper to format complex numbers
   const formatComplex = (complex) => {
@@ -32,6 +32,13 @@ function DebuggerPanel({ debugData, stepIndex, totalSteps }) {
         <div className="step-count">Step: {stepIndex + 1} / {totalSteps}</div>
         <div className="gate-tag">Last Gate: <span>{current_gate}</span></div>
       </div>
+
+      {bloch_img && (
+        <div className="debug-bloch-container" style={{ textAlign: 'center', marginBottom: '16px', background: 'var(--surface-color)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em', fontWeight: 600 }}>3D Bloch Sphere View</div>
+          <img src={bloch_img} alt="Bloch Sphere" style={{ maxWidth: '100%', maxHeight: '240px', objectFit: 'contain', filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.15))' }} />
+        </div>
+      )}
 
       <table className="statevector-table">
         <thead>

@@ -1,29 +1,43 @@
-?start: stmt+ 
+?start: stmt+
 
 ?stmt: qubit_decl ";"
      | qop_stmt ";"
+     | pqop_stmt ";"
      | measure_stmt ";"
      | print_stmt ";"
      | barrier_stmt ";"
      | if_stmt
      | convert_stmt ";"
+     | reset_stmt ";"
 
-qubit_decl: "qubit" id_list
-qop_stmt: "qop" GATE_NAME id_list
+qubit_decl:   "qubit" id_list
+qop_stmt:     "qop" GATE_NAME id_list
+pqop_stmt:    "qop" PGATE_NAME "(" param_list ")" id_list
 measure_stmt: "measure" id_list "->" id_list
-print_stmt: "print" id_list
+print_stmt:   "print" id_list
 barrier_stmt: "barrier" id_list
 convert_stmt: "convert" INT
+reset_stmt:   "reset" id_list
 
 if_stmt: "if" "(" condition ")" "{" stmt+ "}" ("else" "{" stmt+ "}")?
 
 condition: CNAME "==" INT
 
-id_list: CNAME ("," CNAME)*
+id_list:    CNAME ("," CNAME)*
+param_list: NUMBER ("," NUMBER)*
 
-GATE_NAME: "h" | "x" | "y" | "z" | "cx" | "cz" | "ccx" | "swap" | "cy"
+// Non-parameterized gate names
+GATE_NAME: "h" | "x" | "y" | "z"
+         | "cx" | "cy" | "cz" | "ccx" | "swap"
+         | "s" | "t" | "sdg" | "tdg" | "id"
+
+// Parameterized gate names
+PGATE_NAME: "rx" | "ry" | "rz" | "p" | "u"
 
 %import common.CNAME
 %import common.INT
+%import common.NUMBER
 %import common.WS
+%import common.SH_COMMENT
 %ignore WS
+%ignore SH_COMMENT

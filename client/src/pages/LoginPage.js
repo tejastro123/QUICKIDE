@@ -1,31 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import './AuthPage.css'; // We'll create this
-
-// Import your context (we'll create this in Step 2)
-// import { AuthContext } from '../context/AuthContext';
+import './AuthPage.css';
+import { AuthContext } from '../context/AuthContext';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  
-  // const { login } = useContext(AuthContext); // Will uncomment later
+  const { login } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // We call the API directly for now. Context will make this cleaner.
       const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      
-      // --- This logic will move to AuthContext ---
       const { token } = response.data;
-      localStorage.setItem('token', token); // Store token
-      // login(token); // Will use this later
-      // ---
-      
+      login(token); // Updates AuthContext state + localStorage + axios headers
       navigate('/'); // Redirect to IDE
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');

@@ -10,6 +10,8 @@ function Toolbar({
   onClear, 
   onSave,
   onOpenFile,
+  onImportQasm,
+  onShare,
   backend,
   setBackend,
   isDebugMode,
@@ -23,6 +25,8 @@ function Toolbar({
       <div className="toolbar-group">
         <button onClick={onOpenFile} className="accent">Open</button> 
         <button onClick={onSave} className="success_btn">Save Project</button>
+        <button onClick={onShare} className="accent" style={{ color: '#fff', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none' }} title="Generate Shareable Link">🔗 Share</button>
+        <button onClick={onImportQasm} style={{ color: '#fff', background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none' }} title="Import OpenQASM 2.0/3.0">📥 Import QASM</button>
       </div>
 
       <div className="toolbar-group">

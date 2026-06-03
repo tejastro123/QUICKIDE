@@ -1,5 +1,6 @@
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'your-super-secret-key-123'; // Must be the same as in auth.js
+const JWT_SECRET = process.env.JWT_SECRET; // Loaded from .env — must match routes/auth.js
 
 module.exports = function (req, res, next) {
   // Get token from header
