@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const apiRoutes = require('./routes/api');
 const authRoutes = require('./routes/auth');
+const copilotRoutes = require('./routes/copilot');
 
 const axios = require('axios');
 
@@ -55,6 +56,7 @@ app.use('/api', globalLimiter, sseRouter);
 app.use('/api', globalLimiter, sessionRouter);
 app.use('/api', globalLimiter, apiRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/copilot', globalLimiter, copilotRoutes);
 
 // --- Python Backend Health Check ---
 const checkPythonHealth = async (retries = 5, delay = 2000) => {

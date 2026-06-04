@@ -15,6 +15,8 @@ import CloudPage from './pages/CloudPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LandingPage from './pages/LandingPage';
+import CopilotPage from './pages/CopilotPage';
+import DashboardPage from './pages/DashboardPage';
 
 // Helper function to create log entries
 const createLog = (message, type = 'info') => ({ message: `[${new Date().toLocaleTimeString()}] ${message}`, type });
@@ -564,6 +566,8 @@ function App() {
           } />
           <Route path="/resources" element={<ResourcesPage loadProjectAndNavigate={loadProjectAndNavigate} log={log} />} />
           <Route path="/cloud" element={<CloudPage log={log} />} />
+          <Route path="/copilot" element={<CopilotPage code={code} />} />
+          <Route path="/dashboard" element={<DashboardPage onLoadProject={loadProjectAndNavigate} />} />
         </Route>
         <Route path="/share/:shareId" element={
           <IdePage

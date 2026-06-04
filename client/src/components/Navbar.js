@@ -4,7 +4,7 @@ import './Navbar.css';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import {
-  Cpu, FolderOpen, Cloud, Sun, Moon, LogOut, Zap
+  Cpu, FolderOpen, Cloud, Sun, Moon, LogOut, Zap, BrainCircuit, LayoutDashboard
 } from 'lucide-react';
 
 function Navbar() {
@@ -133,6 +133,13 @@ function Navbar() {
               IDE
             </NavLink>
             <NavLink
+              to="/dashboard"
+              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+            >
+              <LayoutDashboard size={14} />
+              Dashboard
+            </NavLink>
+            <NavLink
               to="/resources"
               className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
             >
@@ -145,6 +152,14 @@ function Navbar() {
             >
               <Cloud size={14} />
               Cloud
+            </NavLink>
+            <NavLink
+              to="/copilot"
+              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+              style={({ isActive }) => isActive ? { color: '#a78bfa', background: 'rgba(139,92,246,0.12)', borderColor: 'rgba(139,92,246,0.25)' } : {}}
+            >
+              <BrainCircuit size={14} />
+              QuAI
             </NavLink>
 
             <button onClick={handleLogout} className="logout-button">
