@@ -75,6 +75,14 @@ const checkPythonHealth = async (retries = 5, delay = 2000) => {
 
 // --- Start Server ---
 if (require.main === module) {
+  // Start the BullMQ queue worker
+  try {
+    require('./queue/simulationWorker');
+    console.log(JSON.stringify({ level: 'INFO', message: 'Queue worker started successfully.' }));
+  } catch (err) {
+    console.error(JSON.stringify({ level: 'ERROR', message: 'Failed to start queue worker', error: err.message }));
+  }
+
   app.listen(PORT, () => {
     console.log(JSON.stringify({ level: 'INFO', message: `Node.js server running on http://localhost:${PORT}` }));
     checkPythonHealth();

@@ -1,8 +1,18 @@
 const { Worker } = require('bullmq');
 const axios = require('axios');
+const IORedis = require('ioredis');
 
 const redisUrl = process.env.REDIS_URL || 'redis://192.168.4.145:6379';
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5001';
+
+const connection = new IORedis(redisUrl, {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false
+});
+
+connection.on('error', (err) => {
+  console.warn('[REDIS WORKER WARNING] Redis connection error:', err.message);
+});
 
 const worker = new Worker('simulations', async (job) => {
   const { ir, backend, theme, requestId } = job.data;
@@ -21,9 +31,7 @@ const worker = new Worker('simulations', async (job) => {
   // Return base64 string representing the PNG bytes
   return Buffer.from(response.data).toString('base64');
 }, {
-  connection: {
-    url: redisUrl
-  },
+  connection,
   concurrency: 3
 });
 

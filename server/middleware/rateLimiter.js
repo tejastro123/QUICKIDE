@@ -68,8 +68,8 @@ function rateLimiter(options = {}) {
 
 // ─── Preset limiters ──────────────────────────────────────────────────────────
 
-/** Global: 100 req per 10 min per IP */
-rateLimiter.global = () => rateLimiter({ windowMs: 10 * 60 * 1000, max: 100 });
+/** Global: 1000 req per 10 min per IP */
+rateLimiter.global = () => rateLimiter({ windowMs: 10 * 60 * 1000, max: 1000 });
 
 /** Auth endpoints: 30 attempts per 10 min per IP */
 rateLimiter.auth = () => rateLimiter({
