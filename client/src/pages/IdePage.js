@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import '../App.css';
+import { useWorkspaceStore } from '../store/workspaceStore';
+import FileExplorer from '../components/FileExplorer';
 
 import Toolbar from '../components/Toolbar';
 import CodeEditor from '../components/CodeEditor';
@@ -35,6 +37,34 @@ function IdePage({
 }) {
   const [topTab, setTopTab]       = useState('ast_ir');
   const [bottomTab, setBottomTab] = useState('histogram');
+
+  const activeFile = useWorkspaceStore(s => s.activeFile);
+  const activeFileObj = useWorkspaceStore(s => s.files[activeFile]);
+  const fileExplorerOpen = useWorkspaceStore(s => s.fileExplorerOpen);
+
+  useEffect(() => {
+    if (activeFileObj) {
+      setCode(activeFileObj.content);
+    }
+  }, [activeFile, setCode]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        useWorkspaceStore.getState().toggleFileExplorer();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+    if (activeFile) {
+      useWorkspaceStore.getState().updateFileContent(activeFile, newCode);
+    }
+  };
 
   const TabBtn = ({ id, active, onClick, icon: Icon, label }) => (
     <button
@@ -75,7 +105,13 @@ function IdePage({
       />
 
       <main className="main-content">
-        <Allotment defaultSizes={[55, 45]}>
+        <Allotment defaultSizes={fileExplorerOpen ? [18, 44, 38] : [55, 45]}>
+
+          {fileExplorerOpen && (
+            <Allotment.Pane preferredSize="240px" minSize={180} maxSize={350}>
+              <FileExplorer />
+            </Allotment.Pane>
+          )}
 
           {/* ===================== LEFT PANE ===================== */}
           <Allotment.Pane>
@@ -85,10 +121,10 @@ function IdePage({
               <div className="panel-container">
                 <div className="panel-header">
                   <Code2 size={13} className="panel-header-icon" />
-                  QuCPL Code Editor
+                  QuCPL Code Editor ({activeFile})
                   {isParsing && <span style={styles.activityDot} />}
                 </div>
-                <CodeEditor code={code} setCode={setCode} />
+                <CodeEditor code={code} setCode={handleCodeChange} />
               </div>
 
               {/* Circuit Visualization */}

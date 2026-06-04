@@ -17,6 +17,8 @@ import RegisterPage from './pages/RegisterPage';
 import LandingPage from './pages/LandingPage';
 import CopilotPage from './pages/CopilotPage';
 import DashboardPage from './pages/DashboardPage';
+import ProfilePage from './pages/ProfilePage';
+import CommandPalette from './components/CommandPalette';
 
 // Helper function to create log entries
 const createLog = (message, type = 'info') => ({ message: `[${new Date().toLocaleTimeString()}] ${message}`, type });
@@ -532,12 +534,13 @@ function App() {
   const loadProjectAndNavigate = (projectCode) => {
     setCode(projectCode);
     log('Project loaded. Navigating to IDE...', 'success');
-    navigate('/');
+    navigate('/ide');
   };
 
   return (
     <div className="app-container">
       <Navbar />
+      <CommandPalette />
       <input type="file" ref={fileInputRef} onChange={handleFileSelected} accept=".qucpl" style={{ display: 'none' }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -545,7 +548,8 @@ function App() {
         {/* Public landing page for guests */}
         {!isAuthenticated && <Route path="/" element={<LandingPage />} />}
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={
+          <Route path="/" element={<DashboardPage onLoadProject={loadProjectAndNavigate} />} />
+          <Route path="/ide" element={
             <IdePage
               code={code} setCode={setCode} ast={ast} ir={ir} qasm={qasm} qiskitCode={qiskitCode} logs={logs} 
               circuitUrl={circuitUrl} histogramUrl={histogramUrl}
@@ -564,10 +568,12 @@ function App() {
               log={log}
             />
           } />
-          <Route path="/resources" element={<ResourcesPage loadProjectAndNavigate={loadProjectAndNavigate} log={log} />} />
+          <Route path="/resources" element={<ResourcesPage setCode={loadProjectAndNavigate} log={log} />} />
           <Route path="/cloud" element={<CloudPage log={log} />} />
           <Route path="/copilot" element={<CopilotPage code={code} />} />
           <Route path="/dashboard" element={<DashboardPage onLoadProject={loadProjectAndNavigate} />} />
+          <Route path="/profile" element={<ProfilePage onLoadProject={loadProjectAndNavigate} />} />
+          <Route path="/settings" element={<ProfilePage onLoadProject={loadProjectAndNavigate} defaultTab="settings" />} />
         </Route>
         <Route path="/share/:shareId" element={
           <IdePage

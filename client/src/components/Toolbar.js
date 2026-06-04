@@ -1,11 +1,12 @@
 import React from 'react';
 import './Toolbar.css';
+import { useWorkspaceStore } from '../store/workspaceStore';
 import {
   FolderOpen, Save, Share2, Download,
   GitBranch, Cpu, Eye, Play,
   ChevronLeft, ChevronRight,
   Server, Rocket, Bug,
-  Trash2
+  Trash2, Columns
 } from 'lucide-react';
 
 function Toolbar({
@@ -18,12 +19,18 @@ function Toolbar({
   isTranspiling, isDebugging, isSubmittingCloud,
 }) {
   const Spinner = () => <span className="btn-spinner" />;
+  const fileExplorerOpen = useWorkspaceStore(s => s.fileExplorerOpen);
+  const toggleFileExplorer = useWorkspaceStore.getState().toggleFileExplorer;
 
   return (
     <div className="toolbar">
 
       {/* --- Group 1: File Operations --- */}
       <div className="toolbar-group">
+        <button onClick={toggleFileExplorer} title="Toggle Workspace Sidebar (Ctrl+B)">
+          <Columns size={14} style={{ color: fileExplorerOpen ? 'var(--quantum-cyan)' : 'inherit' }} />
+          {fileExplorerOpen ? 'Hide Workspace' : 'Show Workspace'}
+        </button>
         <button onClick={onOpenFile} title="Open file (Ctrl+O)">
           <FolderOpen size={14} />
           Open

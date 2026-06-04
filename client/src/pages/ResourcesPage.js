@@ -9,7 +9,7 @@ function ResourcesPage({ setCode, log }) {
   const handleLoadAndSwitch = (codeToLoad) => {
     setCode(codeToLoad);
     log('Project loaded. Navigating to IDE...', 'success');
-    navigate('/'); 
+    navigate('/ide'); 
   };
 
   return (

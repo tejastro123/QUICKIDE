@@ -102,6 +102,100 @@ const handleEditorWillMount = (monaco) => {
 function CodeEditor({ code, setCode }) {
   const { theme } = useContext(ThemeContext);
 
+  const handleEditorDidMount = (editor, monaco) => {
+    const model = editor.getModel();
+    if (!model) return;
+
+    const validate = () => {
+      const value = model.getValue();
+      const markers = [];
+      const lines = value.split('\n');
+      const declaredQubits = new Set();
+
+      lines.forEach((line, idx) => {
+        const lineNum = idx + 1;
+
+        // 1. Qubit declaration matching (e.g., "qubit q0, q1;")
+        const qubitMatch = line.match(/qubit\s+([^;]+);/);
+        if (qubitMatch) {
+          const names = qubitMatch[1].split(',').map(n => n.trim());
+          names.forEach(name => {
+            if (name) declaredQubits.add(name);
+          });
+        }
+
+        // 2. Gate operations (e.g., "qop h q0;")
+        if (line.includes('qop')) {
+          const match = line.match(/qop\s+([a-zA-Z0-9()\-.]+)\s+([^;]+);/);
+          if (match) {
+            const qubits = match[2].split(',').map(q => q.trim());
+            qubits.forEach(q => {
+              if (q && !declaredQubits.has(q)) {
+                markers.push({
+                  severity: monaco.MarkerSeverity.Error,
+                  message: `Qubit '${q}' is used but not declared. Declare it using 'qubit ${q};' first.`,
+                  startLineNumber: lineNum,
+                  startColumn: line.indexOf(q) + 1,
+                  endLineNumber: lineNum,
+                  endColumn: line.indexOf(q) + q.length + 1
+                });
+              }
+            });
+          } else {
+            markers.push({
+              severity: monaco.MarkerSeverity.Warning,
+              message: "Invalid gate operation syntax. Expected: 'qop <gate> <qubits>;'",
+              startLineNumber: lineNum,
+              startColumn: 1,
+              endLineNumber: lineNum,
+              endColumn: line.length + 1
+            });
+          }
+        }
+
+        // 3. Measurement statements (e.g., "measure q0 -> c0;")
+        if (line.includes('measure')) {
+          const match = line.match(/measure\s+([^->\s]+)\s*->\s*([^;]+);/);
+          if (!match) {
+            markers.push({
+              severity: monaco.MarkerSeverity.Warning,
+              message: "Invalid measure syntax. Expected: 'measure <qubits> -> <classical_bits>;'",
+              startLineNumber: lineNum,
+              startColumn: 1,
+              endLineNumber: lineNum,
+              endColumn: line.length + 1
+            });
+          } else {
+            const qubits = match[1].split(',').map(q => q.trim());
+            qubits.forEach(q => {
+              if (q && !declaredQubits.has(q)) {
+                markers.push({
+                  severity: monaco.MarkerSeverity.Error,
+                  message: `Qubit '${q}' is measured but not declared.`,
+                  startLineNumber: lineNum,
+                  startColumn: line.indexOf(q) + 1,
+                  endLineNumber: lineNum,
+                  endColumn: line.indexOf(q) + q.length + 1
+                });
+              }
+            });
+          }
+        }
+      });
+
+      monaco.editor.setModelMarkers(model, 'qucpl', markers);
+    };
+
+    // Run diagnostics immediately and bind to changes
+    validate();
+    const disposable = model.onDidChangeContent(validate);
+
+    // clean up on unmount
+    return () => {
+      disposable.dispose();
+    };
+  };
+
   return (
     <div className="panel-content">
       <Editor
@@ -110,9 +204,10 @@ function CodeEditor({ code, setCode }) {
         theme={theme === 'dark' ? 'vs-dark' : 'vs'}
         value={code}
         beforeMount={handleEditorWillMount}
+        onMount={handleEditorDidMount}
         onChange={(value) => setCode(value || '')}
         options={{ 
-          minimap: { enabled: false },
+          minimap: { enabled: true },
           fontSize: 14,
           lineNumbers: 'on',
           roundedSelection: true,
